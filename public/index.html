@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eReader - Read Your Documents</title>
+    <!-- Google Fonts - Inter for a clean, modern look (similar to Google Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons (using CDN as before) -->
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar / Navigation Panel -->
+        <aside class="sidebar">
+            <header class="app-header">
+                <i class="fas fa-book-open app-icon"></i>
+                <h1>eReader</h1>
+            </header>
+
+            <section class="upload-section card">
+                <h2><i class="fas fa-cloud-upload-alt card-icon"></i> Upload Document</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <label for="fileInput" class="custom-file-upload">
+                        <i class="fas fa-file-upload"></i> Choose File
+                    </label>
+                    <input type="file" id="fileInput" name="document" accept=".pdf,.txt,.docx">
+                    <button type="submit" class="button primary-button"><i class="fas fa-upload"></i> Upload</button>
+                </form>
+            </section>
+
+            <section class="files-section card">
+                <h2><i class="fas fa-folder card-icon"></i> Your Library</h2>
+                <div id="filesList">
+                    <p class="loading-message"><i class="fas fa-spinner fa-spin"></i> Loading files...</p>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Content Area / Reader Panel -->
+        <main class="main-content">
+            <section class="reader-section card">
+                <h2><i class="fas fa-glasses card-icon"></i> Document Reader</h2>
+                <div class="reader-controls">
+                    <button id="playBtn" class="button action-button" title="Play">
+                        <i class="fas fa-play"></i> Play
+                    </button>
+                    <button id="pauseBtn" class="button action-button" title="Pause">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button id="stopBtn" class="button action-button" title="Stop">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    <div class="speed-control-group">
+                        <label for="speedControl"><i class="fas fa-tachometer-alt"></i> Speed:</label>
+                        <input type="range" id="speedControl" min="0.5" max="2" value="1" step="0.1" title="Adjust Reading Speed">
+                        <span id="speedValue">1.0x</span>
+                    </div>
+                </div>
+                <div id="bookContent" class="content-display">
+                    <p class="placeholder-text">Select a document from 'Your Library' to start reading.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Area -->
+    <div id="notificationArea" class="notification-area"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
