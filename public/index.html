@@ -3,71 +3,764 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eReader - Read Your Documents</title>
-    <!-- Google Fonts - Inter for a clean, modern look (similar to Google Sans) -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome for icons (using CDN as before) -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="style.css">
+    <title>eReader - Dark Mode</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0a0a0a;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #6a6a6a;
+            --accent: #4a9eff;
+            --accent-hover: #6bb6ff;
+            --success: #4ade80;
+            --error: #f87171;
+            --warning: #fbbf24;
+            --border: #333;
+            --border-hover: #555;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(45deg, var(--accent), var(--accent-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            height: calc(100vh - 200px);
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            background: var(--bg-secondary);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card {
+            background: var(--bg-tertiary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-2px);
+        }
+
+        .card h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card h3 i {
+            color: var(--accent);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+            transform: scale(1.02);
+        }
+
+        .upload-zone input {
+            display: none;
+        }
+
+        .upload-zone .upload-icon {
+            font-size: 3rem;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .upload-zone .upload-text {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-success {
+            background: var(--success);
+        }
+
+        .btn-success:hover {
+            background: #22c55e;
+        }
+
+        .btn-danger {
+            background: var(--error);
+        }
+
+        .btn-danger:hover {
+            background: #ef4444;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+        }
+
+        .file-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            border-color: var(--border-hover);
+            transform: translateX(5px);
+        }
+
+        .file-item.active {
+            border-color: var(--accent);
+            background: var(--bg-secondary);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            color: var(--text-primary);
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .file-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .speed-control input {
+            width: 120px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            outline: none;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .speed-control input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .content-display {
+            flex: 1;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-primary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .empty-state h3 {
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--error);
+        }
+
+        .notification.info {
+            background: var(--accent);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+        }
+
+        .loading i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-hover);
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .main-content {
+                order: 1;
+                min-height: 600px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Left Sidebar / Navigation Panel -->
-        <aside class="sidebar">
-            <header class="app-header">
-                <i class="fas fa-book-open app-icon"></i>
-                <h1>eReader</h1>
-            </header>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-book-open"></i> eReader</h1>
+            <p>Upload and read your documents with AI voice synthesis</p>
+        </div>
 
-            <section class="upload-section card">
-                <h2><i class="fas fa-cloud-upload-alt card-icon"></i> Upload Document</h2>
-                <form id="uploadForm" enctype="multipart/form-data">
-                    <label for="fileInput" class="custom-file-upload">
-                        <i class="fas fa-file-upload"></i> Choose File
-                    </label>
-                    <input type="file" id="fileInput" name="document" accept=".pdf,.txt,.docx">
-                    <button type="submit" class="button primary-button"><i class="fas fa-upload"></i> Upload</button>
-                </form>
-            </section>
-
-            <section class="files-section card">
-                <h2><i class="fas fa-folder card-icon"></i> Your Library</h2>
-                <div id="filesList">
-                    <p class="loading-message"><i class="fas fa-spinner fa-spin"></i> Loading files...</p>
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Upload Section -->
+                <div class="card">
+                    <h3><i class="fas fa-cloud-upload-alt"></i> Upload Document</h3>
+                    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept=".pdf,.txt,.docx" onchange="handleFileSelect(this)">
+                        <div class="upload-icon">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div class="upload-text">
+                            <div>Click to upload or drag & drop</div>
+                            <small>PDF, TXT, DOCX files (max 50MB)</small>
+                        </div>
+                    </div>
+                    <div id="selectedFile" style="display: none; margin-top: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border);">
+                        <div id="fileName" style="color: var(--text-primary); font-weight: 500;"></div>
+                        <div id="fileSize" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+                    </div>
+                    <button class="btn btn-success" onclick="uploadFile()" style="width: 100%; margin-top: 15px;">
+                        <i class="fas fa-upload"></i> Upload Document
+                    </button>
                 </div>
-            </section>
-        </aside>
 
-        <!-- Main Content Area / Reader Panel -->
-        <main class="main-content">
-            <section class="reader-section card">
-                <h2><i class="fas fa-glasses card-icon"></i> Document Reader</h2>
-                <div class="reader-controls">
-                    <button id="playBtn" class="button action-button" title="Play">
-                        <i class="fas fa-play"></i> Play
+                <!-- Files List -->
+                <div class="card">
+                    <h3><i class="fas fa-folder"></i> Your Documents</h3>
+                    <button class="btn btn-small" onclick="loadFiles()" style="margin-bottom: 15px;">
+                        <i class="fas fa-sync-alt"></i> Refresh
                     </button>
-                    <button id="pauseBtn" class="button action-button" title="Pause">
-                        <i class="fas fa-pause"></i> Pause
-                    </button>
-                    <button id="stopBtn" class="button action-button" title="Stop">
-                        <i class="fas fa-stop"></i> Stop
-                    </button>
-                    <div class="speed-control-group">
-                        <label for="speedControl"><i class="fas fa-tachometer-alt"></i> Speed:</label>
-                        <input type="range" id="speedControl" min="0.5" max="2" value="1" step="0.1" title="Adjust Reading Speed">
-                        <span id="speedValue">1.0x</span>
+                    <div id="filesList" class="file-list">
+                        <div class="loading">
+                            <i class="fas fa-spinner"></i> Loading documents...
+                        </div>
                     </div>
                 </div>
-                <div id="bookContent" class="content-display">
-                    <p class="placeholder-text">Select a document from 'Your Library' to start reading.</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="card" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column;">
+                    <h3><i class="fas fa-book-reader"></i> Document Reader</h3>
+                    
+                    <!-- Controls -->
+                    <div class="controls">
+                        <button class="btn" onclick="playText()">
+                            <i class="fas fa-play"></i> Play
+                        </button>
+                        <button class="btn" onclick="pauseText()">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button class="btn" onclick="stopText()">
+                            <i class="fas fa-stop"></i> Stop
+                        </button>
+                        
+                        <div class="speed-control">
+                            <label style="color: var(--text-secondary);">Speed:</label>
+                            <input type="range" id="speedControl" min="0.5" max="2" value="1" step="0.1" onchange="updateSpeed(this.value)">
+                            <span id="speedValue" style="color: var(--text-primary); font-weight: 500;">1.0x</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Content -->
+                    <div id="bookContent" class="content-display">
+                        <div class="empty-state">
+                            <i class="fas fa-book"></i>
+                            <h3>No document selected</h3>
+                            <p>Upload a document and click "Read" to get started</p>
+                        </div>
+                    </div>
                 </div>
-            </section>
-        </main>
+            </div>
+        </div>
     </div>
 
-    <!-- Notification Area -->
-    <div id="notificationArea" class="notification-area"></div>
+    <div id="notification" class="notification"></div>
 
-    <script src="script.js"></script>
+    <script>
+        // Global variables
+        let currentText = '';
+        let currentFilename = '';
+        let speechSynthesis = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPlaying = false;
+
+        // Initialize app
+        window.onload = function() {
+            setupDragAndDrop();
+            loadFiles();
+        };
+
+        // Setup drag and drop
+        function setupDragAndDrop() {
+            const uploadZone = document.querySelector('.upload-zone');
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.classList.add('dragover');
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadZone.addEventListener(eventName, () => {
+                    uploadZone.classList.remove('dragover');
+                }, false);
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    document.getElementById('fileInput').files = files;
+                    handleFileSelect(document.getElementById('fileInput'));
+                }
+            }, false);
+        }
+
+        // Handle file selection
+        function handleFileSelect(input) {
+            const file = input.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('selectedFile').style.display = 'block';
+            }
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Upload file
+        function uploadFile() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Please select a file first', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('document', file);
+
+            showNotification('Uploading file...', 'info');
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Upload response:', data);
+                if (data.success) {
+                    showNotification('File uploaded successfully!', 'success');
+                    fileInput.value = '';
+                    document.getElementById('selectedFile').style.display = 'none';
+                    loadFiles();
+                } else {
+                    showNotification(data.error || 'Upload failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                showNotification('Upload failed: ' + error.message, 'error');
+            });
+        }
+
+        // Load files
+        function loadFiles() {
+            const filesList = document.getElementById('filesList');
+            filesList.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading documents...</div>';
+
+            fetch('/files')
+            .then(response => response.json())
+            .then(data => {
+                console.log('Files response:', data);
+                if (data.success) {
+                    const files = data.files;
+                    if (files.length === 0) {
+                        filesList.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No documents found</p></div>';
+                        return;
+                    }
+
+                    filesList.innerHTML = files.map(file => `
+                        <div class="file-item ${file.filename === currentFilename ? 'active' : ''}" data-filename="${file.filename}">
+                            <div class="file-info">
+                                <div class="file-name">${file.originalName}</div>
+                                <div class="file-meta">${formatFileSize(file.size)} • ${new Date(file.uploadDate).toLocaleDateString()}</div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-small" onclick="readFile('${file.filename}', '${file.originalName}')">
+                                    <i class="fas fa-book-open"></i> Read
+                                </button>
+                                <button class="btn btn-small btn-danger" onclick="deleteFile('${file.filename}', '${file.originalName}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    filesList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading files</p></div>';
+                    showNotification(data.error || 'Failed to load files', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Load files error:', error);
+                filesList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading files</p></div>';
+                showNotification('Error loading files: ' + error.message, 'error');
+            });
+        }
+
+        // Read file
+        function readFile(filename, originalName) {
+            const bookContent = document.getElementById('bookContent');
+            bookContent.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading document...</div>';
+
+            // Update active file
+            currentFilename = filename;
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-filename="${filename}"]`).classList.add('active');
+
+            fetch(`/read/${filename}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Read response:', data);
+                if (data.success) {
+                    currentText = data.content;
+                    if (currentText.trim() === '') {
+                        bookContent.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><h3>Document is empty</h3><p>This document contains no readable text</p></div>';
+                        showNotification('Document appears to be empty', 'error');
+                    } else {
+                        bookContent.textContent = currentText;
+                        showNotification('Document loaded successfully!', 'success');
+                    }
+                } else {
+                    bookContent.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>${data.error}</p></div>`;
+                    showNotification(data.error || 'Failed to load document', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Read error:', error);
+                bookContent.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>Network error occurred</p></div>';
+                showNotification('Error reading file: ' + error.message, 'error');
+            });
+        }
+
+        // Delete file
+        function deleteFile(filename, originalName) {
+            if (!confirm(`Are you sure you want to delete "${originalName}"?`)) {
+                return;
+            }
+
+            fetch(`/delete/${filename}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('File deleted successfully!', 'success');
+                    if (filename === currentFilename) {
+                        currentText = '';
+                        currentFilename = '';
+                        document.getElementById('bookContent').innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><h3>No document selected</h3><p>Upload a document and click "Read" to get started</p></div>';
+                    }
+                    loadFiles();
+                } else {
+                    showNotification(data.error || 'Failed to delete file', 'error');
+                }
+            })
+            .catch(error => {
+                showNotification('Error deleting file: ' + error.message, 'error');
+            });
+        }
+
+        // Speech functions
+        function playText() {
+            if (!currentText) {
+                showNotification('No text to read. Please load a document first.', 'error');
+                return;
+            }
+
+            if (speechSynthesis.speaking) {
+                if (speechSynthesis.paused) {
+                    speechSynthesis.resume();
+                    showNotification('Reading resumed', 'info');
+                } else {
+                    showNotification('Already playing!', 'info');
+                }
+                return;
+            }
+
+            currentUtterance = new SpeechSynthesisUtterance(currentText);
+            currentUtterance.rate = parseFloat(document.getElementById('speedControl').value);
+            currentUtterance.pitch = 1;
+            currentUtterance.volume = 1;
+
+            currentUtterance.onend = function() {
+                isPlaying = false;
+                showNotification('Finished reading', 'info');
+            };
+
+            currentUtterance.onerror = function(event) {
+                isPlaying = false;
+                showNotification('Speech error: ' + event.error, 'error');
+            };
+
+            speechSynthesis.speak(currentUtterance);
+            isPlaying = true;
+            showNotification('Reading started...', 'success');
+        }
+
+        function pauseText() {
+            if (speechSynthesis.speaking && !speechSynthesis.paused) {
+                speechSynthesis.pause();
+                showNotification('Reading paused', 'info');
+            } else {
+                showNotification('Nothing to pause', 'info');
+            }
+        }
+
+        function stopText() {
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                isPlaying = false;
+                showNotification('Reading stopped', 'info');
+            } else {
+                showNotification('Nothing to stop', 'info');
+            }
+        }
+
+        function updateSpeed(value) {
+            document.getElementById('speedValue').textContent = value + 'x';
+            if (currentUtterance) {
+                currentUtterance.rate = parseFloat(value);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.getElementById('notification');
+            notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}`;
+            notification.className = `notification ${type} show`;
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+    </script>
 </body>
 </html>

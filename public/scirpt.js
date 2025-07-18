@@ -1,57 +1,140 @@
 class BookReaderApp {
     constructor() {
         this.currentText = '';
-        this.currentFilename = null; // To keep track of the currently loaded file
+        this.currentFilename = null;
+        this.currentDocument = null;
         this.speechSynthesis = window.speechSynthesis;
         this.currentUtterance = null;
         this.isPlaying = false;
+        this.isDarkMode = localStorage.getItem('darkMode') === 'true';
         
-        this.initializeEventListeners();
-        this.loadFiles();
+        this.initializeApp();
     }
 
-    initializeEventListeners() {
+    initializeApp() {
+        this.setupTheme();
+        this.setupEventListeners();
+        this.setupDragAndDrop();
+        this.loadFiles();
+        this.setupVoiceControls();
+    }
+
+    setupTheme() {
+        if (this.isDarkMode) {
+            document.body.classList.add('dark-mode');
+            document.querySelector('.theme-toggle i').classList.replace('fa-moon', 'fa-sun');
+        }
+    }
+
+    setupEventListeners() {
+        // Theme toggle
+        document.querySelector('.theme-toggle').addEventListener('click', () => {
+            this.toggleTheme();
+        });
+
         // Upload form
         document.getElementById('uploadForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.uploadFile();
         });
 
+        // File input change
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            this.handleFileSelect(e.target.files[0]);
+        });
+
         // Voice controls
-        document.getElementById('playBtn').addEventListener('click', () => {
-            this.playText();
-        });
-
-        // Pause button
-        document.getElementById('pauseBtn').addEventListener('click', () => {
-            this.pauseText();
-        });
-
-        // Stop button
-        document.getElementById('stopBtn').addEventListener('click', () => {
-            this.stopText();
-        });
+        document.getElementById('playBtn').addEventListener('click', () => this.playText());
+        document.getElementById('pauseBtn').addEventListener('click', () => this.pauseText());
+        document.getElementById('stopBtn').addEventListener('click', () => this.stopText());
 
         // Speed control
-        const speedControl = document.getElementById('speedControl');
-        speedControl.addEventListener('input', (e) => {
-            document.getElementById('speedValue').textContent = e.target.value + 'x';
-            if (this.currentUtterance && this.isPlaying) {
-                this.currentUtterance.rate = parseFloat(e.target.value);
-                // If speech is currently ongoing, cancel and restart with new rate
-                // This ensures the speed change is applied immediately
-                if (this.speechSynthesis.speaking && !this.speechSynthesis.paused) {
-                    this.speechSynthesis.cancel();
-                    this.speechSynthesis.speak(this.currentUtterance);
-                }
-            }
+        document.getElementById('speedControl').addEventListener('input', (e) => {
+            this.updateSpeed(e.target.value);
         });
 
-        // Update file input label when a file is selected
-        document.getElementById('fileInput').addEventListener('change', (e) => {
-            const fileName = e.target.files[0] ? e.target.files[0].name : 'Choose File';
-            document.querySelector('.custom-file-upload').innerHTML = `<i class="fas fa-file-upload"></i> ${fileName}`;
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.loadFiles();
         });
+
+        // Fullscreen toggle
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            this.toggleFullscreen();
+        });
+
+        // Font size toggle
+        document.getElementById('fontSizeBtn').addEventListener('click', () => {
+            this.cycleFontSize();
+        });
+    }
+
+    setupDragAndDrop() {
+        const uploadLabel = document.querySelector('.file-upload-label');
+        
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadLabel.addEventListener(eventName, this.preventDefaults, false);
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadLabel.addEventListener(eventName, () => {
+                uploadLabel.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadLabel.addEventListener(eventName, () => {
+                uploadLabel.classList.remove('dragover');
+            }, false);
+        });
+
+        uploadLabel.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                this.handleFileSelect(files[0]);
+            }
+        }, false);
+    }
+
+    preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    toggleTheme() {
+        this.isDarkMode = !this.isDarkMode;
+        document.body.classList.toggle('dark-mode');
+        localStorage.setItem('darkMode', this.isDarkMode);
+        
+        const themeIcon = document.querySelector('.theme-toggle i');
+        if (this.isDarkMode) {
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        } else {
+            themeIcon.classList.replace('fa-sun', 'fa-moon');
+        }
+    }
+
+    handleFileSelect(file) {
+        if (!file) return;
+        
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = this.formatFileSize(file.size);
+        fileInfo.style.display = 'flex';
+        
+        // Hide the upload label
+        document.querySelector('.file-upload-label').style.display = 'none';
+    }
+
+    formatFileSize(bytes) {
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        if (bytes === 0) return '0 Bytes';
+        const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+        return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
     }
 
     async uploadFile() {
@@ -59,17 +142,15 @@ class BookReaderApp {
         const file = fileInput.files[0];
         
         if (!file) {
-            this.showNotification('Please select a file to upload.', 'error');
+            this.showToast('Please select a file to upload.', 'error');
             return;
         }
-
-        // Reset custom file upload label
-        document.querySelector('.custom-file-upload').innerHTML = '<i class="fas fa-file-upload"></i> Choose File';
 
         const formData = new FormData();
         formData.append('document', file);
 
-        this.showNotification('Uploading file...', 'info');
+        this.showLoadingOverlay('Uploading document...');
+        
         try {
             const response = await fetch('/upload', {
                 method: 'POST',
@@ -79,117 +160,214 @@ class BookReaderApp {
             const result = await response.json();
 
             if (response.ok) {
-                this.showNotification('File uploaded successfully!', 'success');
-                fileInput.value = ''; // Clear file input
-                this.loadFiles(); // Reload files list
+                this.showToast('Document uploaded successfully!', 'success');
+                this.resetUploadForm();
+                this.loadFiles();
             } else {
-                this.showNotification(result.error || 'Upload failed', 'error');
+                this.showToast(result.error || 'Upload failed', 'error');
             }
         } catch (error) {
-            this.showNotification('Error uploading file: ' + error.message, 'error');
+            this.showToast('Error uploading file: ' + error.message, 'error');
+        } finally {
+            this.hideLoadingOverlay();
         }
+    }
+
+    resetUploadForm() {
+        document.getElementById('fileInput').value = '';
+        document.getElementById('fileInfo').style.display = 'none';
+        document.querySelector('.file-upload-label').style.display = 'flex';
     }
 
     async loadFiles() {
         const filesList = document.getElementById('filesList');
-        filesList.innerHTML = '<p class="loading-message"><i class="fas fa-spinner fa-spin"></i> Loading files...</p>'; // Show loading indicator
+        filesList.innerHTML = `
+            <div class="loading-state">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading documents...</span>
+            </div>
+        `;
 
         try {
             const response = await fetch('/files');
             const files = await response.json();
             
             if (files.length === 0) {
-                filesList.innerHTML = '<p class="empty-message">No documents found. Upload one to get started!</p>';
+                filesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-folder-open"></i>
+                        <span>No documents found</span>
+                        <small>Upload your first document to get started</small>
+                    </div>
+                `;
                 return;
             }
 
-            // Sort files by originalName alphabetically for a cleaner list
-            files.sort((a, b) => a.originalName.localeCompare(b.originalName));
-
             filesList.innerHTML = files.map(file => `
-                <div class="file-item ${file.filename === this.currentFilename ? 'active' : ''}" data-filename="${file.filename}">
-                    <span class="file-name"><i class="fas fa-file-alt"></i> ${file.originalName}</span>
-                    <button onclick="app.readFile('${file.filename}')" class="button ghost-button read-button" title="Open document">
-                        <i class="fas fa-book-open"></i> Read
-                    </button>
+                <div class="file-item ${file.filename === this.currentFilename ? 'active' : ''}" 
+                     data-filename="${file.filename}">
+                    <div class="file-info-container">
+                        <div class="file-name">${file.originalName}</div>
+                        <div class="file-meta">
+                            ${this.formatFileSize(file.size)} • 
+                            ${new Date(file.uploadDate).toLocaleDateString()}
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="button ghost-button" onclick="app.readFile('${file.filename}', '${file.originalName}')">
+                            <i class="fas fa-book-open"></i> Read
+                        </button>
+                        <button class="button ghost-button" onclick="app.deleteFile('${file.filename}', '${file.originalName}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
 
-            // Highlight the currently active file if any
-            if (this.currentFilename) {
-                const activeFileItem = document.querySelector(`.file-item[data-filename="${this.currentFilename}"]`);
-                if (activeFileItem) {
-                    activeFileItem.classList.add('active');
-                }
-            }
-
         } catch (error) {
-            console.error('Error loading files:', error);
-            filesList.innerHTML = '<p class="error-message"><i class="fas fa-exclamation-triangle"></i> Failed to load files.</p>';
-            this.showNotification('Error loading files: ' + error.message, 'error');
+            filesList.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Error loading documents</span>
+                    <small>${error.message}</small>
+                </div>
+            `;
+            this.showToast('Error loading files: ' + error.message, 'error');
         }
     }
 
-    async readFile(filename) {
-        this.stopText(); // Stop any ongoing speech
-        this.currentFilename = filename; // Set the current filename
+    async readFile(filename, originalName) {
+        this.stopText();
+        this.currentFilename = filename;
+        this.currentDocument = { filename, originalName };
 
+        this.showLoadingOverlay('Loading document...');
+        
         const bookContent = document.getElementById('bookContent');
-        bookContent.innerHTML = '<div class="loading-content"><i class="fas fa-spinner fa-spin"></i> Loading document...</div>';
-        bookContent.classList.remove('placeholder-text'); // Remove placeholder class
-
-        // Remove active class from all file items, then add to the clicked one
-        document.querySelectorAll('.file-item').forEach(item => item.classList.remove('active'));
-        const clickedFileItem = document.querySelector(`.file-item[data-filename="${filename}"]`);
-        if (clickedFileItem) {
-            clickedFileItem.classList.add('active');
-        }
-
+        const readerInfo = document.getElementById('readerInfo');
+        const currentDocumentName = document.getElementById('currentDocumentName');
+        
         try {
             const response = await fetch(`/read/${filename}`);
             const result = await response.json();
 
             if (response.ok) {
-                this.currentText = result.content.trim(); // Trim whitespace
+                this.currentText = result.content.trim();
+                
                 if (this.currentText === '') {
-                    bookContent.innerHTML = '<p class="empty-content-message">This document appears to be empty or could not be fully parsed.</p>';
-                    this.showNotification('Document is empty or could not be parsed.', 'warning');
+                    bookContent.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Document is empty</span>
+                            <small>This document could not be parsed or contains no readable text</small>
+                        </div>
+                    `;
+                    this.showToast('Document appears to be empty', 'warning');
                 } else {
-                    // Use innerText to preserve line breaks and prevent HTML injection from parsed text
-                    bookContent.innerText = this.currentText; 
-                    this.showNotification('File loaded successfully! Click Play to listen.', 'success');
+                    bookContent.textContent = this.currentText;
+                    
+                    // Update reader info
+                    currentDocumentName.textContent = originalName;
+                    document.getElementById('documentStats').textContent = 
+                        `${this.currentText.split(' ').length} words • ${this.currentText.length} characters`;
+                    readerInfo.style.display = 'flex';
+                    
+                    // Update file list active state
+                    document.querySelectorAll('.file-item').forEach(item => {
+                        item.classList.toggle('active', item.dataset.filename === filename);
+                    });
+                    
+                    this.showToast('Document loaded successfully!', 'success');
                 }
             } else {
-                bookContent.innerHTML = `<p class="error-message"><i class="fas fa-exclamation-triangle"></i> Error loading file: ${result.error || 'Unknown error'}</p>`;
-                this.currentText = ''; // Clear current text on error
-                this.showNotification(result.error || 'Failed to read file', 'error');
+                bookContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Error loading document</span>
+                        <small>${result.error || 'Unknown error'}</small>
+                    </div>
+                `;
+                this.showToast(result.error || 'Failed to read file', 'error');
             }
         } catch (error) {
-            bookContent.innerHTML = `<p class="error-message"><i class="fas fa-exclamation-triangle"></i> Error reading file: ${error.message}</p>`;
-            this.currentText = ''; // Clear current text on error
-            this.showNotification('Error reading file: ' + error.message, 'error');
+            bookContent.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Error loading document</span>
+                    <small>${error.message}</small>
+                </div>
+            `;
+            this.showToast('Error reading file: ' + error.message, 'error');
+        } finally {
+            this.hideLoadingOverlay();
+        }
+    }
+
+    async deleteFile(filename, originalName) {
+        if (!confirm(`Are you sure you want to delete "${originalName}"?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/delete/${filename}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                this.showToast('Document deleted successfully!', 'success');
+                this.loadFiles();
+                
+                // Clear reader if this was the current document
+                if (this.currentFilename === filename) {
+                    this.currentText = '';
+                    this.currentFilename = null;
+                    this.currentDocument = null;
+                    document.getElementById('bookContent').innerHTML = `
+                        <div class="welcome-message">
+                            <div class="welcome-icon">📖</div>
+                            <h3>Welcome to eReader</h3>
+                            <p>Upload a document from the sidebar to start reading, or select from your library.</p>
+                        </div>
+                    `;
+                    document.getElementById('readerInfo').style.display = 'none';
+                }
+            } else {
+                this.showToast(result.error || 'Failed to delete file', 'error');
+            }
+        } catch (error) {
+            this.showToast('Error deleting file: ' + error.message, 'error');
+        }
+    }
+
+    setupVoiceControls() {
+        // Check if speech synthesis is available
+        if (!this.speechSynthesis) {
+            document.querySelector('.voice-controls').style.display = 'none';
+            this.showToast('Speech synthesis not available in this browser', 'warning');
         }
     }
 
     playText() {
         if (!this.currentText) {
-            this.showNotification('No text to read. Please load a document first.', 'error');
+            this.showToast('No text to read. Please load a document first.', 'error');
             return;
         }
 
         if (this.speechSynthesis.speaking && !this.speechSynthesis.paused) {
-            this.showNotification('Already playing!', 'info');
+            this.showToast('Already playing!', 'info');
             return;
         }
 
         if (this.speechSynthesis.paused) {
             this.speechSynthesis.resume();
             this.isPlaying = true;
-            this.showNotification('Reading resumed...', 'info');
+            this.showToast('Reading resumed', 'info');
+            this.updatePlayButton(true);
             return;
         }
 
-        // If nothing is speaking or paused, start a new utterance
         this.currentUtterance = new SpeechSynthesisUtterance(this.currentText);
         this.currentUtterance.rate = parseFloat(document.getElementById('speedControl').value);
         this.currentUtterance.pitch = 1;
@@ -197,35 +375,28 @@ class BookReaderApp {
 
         this.currentUtterance.onend = () => {
             this.isPlaying = false;
-            this.showNotification('Finished reading', 'info');
+            this.updatePlayButton(false);
+            this.showToast('Finished reading', 'info');
         };
 
         this.currentUtterance.onerror = (event) => {
             this.isPlaying = false;
-            let errorMessage = 'An unknown speech error occurred.';
-            if (event.error) {
-                errorMessage = `Speech error: ${event.error}`;
-            } else if (event.message) {
-                 errorMessage = `Speech error: ${event.message}`;
-            }
-            this.showNotification(errorMessage, 'error');
-            console.error('Speech synthesis error:', event);
+            this.updatePlayButton(false);
+            this.showToast('Speech error occurred', 'error');
         };
 
         this.speechSynthesis.speak(this.currentUtterance);
         this.isPlaying = true;
-        this.showNotification('Reading started...', 'success');
+        this.updatePlayButton(true);
+        this.showToast('Reading started', 'success');
     }
 
     pauseText() {
         if (this.speechSynthesis.speaking && !this.speechSynthesis.paused) {
             this.speechSynthesis.pause();
             this.isPlaying = false;
-            this.showNotification('Reading paused', 'info');
-        } else if (this.speechSynthesis.paused) {
-            this.showNotification('Already paused!', 'info');
-        } else {
-            this.showNotification('Nothing to pause.', 'warning');
+            this.updatePlayButton(false);
+            this.showToast('Reading paused', 'info');
         }
     }
 
@@ -233,37 +404,95 @@ class BookReaderApp {
         if (this.speechSynthesis.speaking || this.speechSynthesis.paused) {
             this.speechSynthesis.cancel();
             this.isPlaying = false;
-            this.showNotification('Reading stopped', 'info');
-        } else {
-            this.showNotification('Nothing is playing or paused.', 'warning');
+            this.updatePlayButton(false);
+            this.showToast('Reading stopped', 'info');
         }
     }
 
-    // Unified notification system
-    showNotification(message, type = 'info', duration = 3000) {
-        const notificationArea = document.getElementById('notificationArea');
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.innerHTML = `
-            <div class="notification-icon">
-                ${type === 'success' ? '<i class="fas fa-check-circle"></i>' : ''}
-                ${type === 'error' ? '<i class="fas fa-exclamation-circle"></i>' : ''}
-                ${type === 'info' ? '<i class="fas fa-info-circle"></i>' : ''}
-                ${type === 'warning' ? '<i class="fas fa-exclamation-triangle"></i>' : ''}
-            </div>
-            <span class="notification-message">${message}</span>
-            <button class="close-notification-btn" onclick="this.parentElement.remove()" title="Close Notification"><i class="fas fa-times"></i></button>
+    updatePlayButton(isPlaying) {
+        const playBtn = document.getElementById('playBtn');
+        const icon = playBtn.querySelector('i');
+        
+        if (isPlaying) {
+            icon.classList.replace('fa-play', 'fa-pause');
+            playBtn.title = 'Pause Reading';
+        } else {
+            icon.classList.replace('fa-pause', 'fa-play');
+            playBtn.title = 'Play Reading';
+        }
+    }
+
+    updateSpeed(value) {
+        document.getElementById('speedValue').textContent = value + 'x';
+        
+        if (this.currentUtterance && this.isPlaying) {
+            this.currentUtterance.rate = parseFloat(value);
+        }
+    }
+
+    toggleFullscreen() {
+        const contentDisplay = document.getElementById('bookContent');
+        
+        if (!document.fullscreenElement) {
+            contentDisplay.requestFullscreen().catch(err => {
+                this.showToast('Could not enter fullscreen mode', 'error');
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    }
+
+    cycleFontSize() {
+        const contentDisplay = document.getElementById('bookContent');
+        const currentSize = parseInt(getComputedStyle(contentDisplay).fontSize);
+        
+        let newSize;
+        if (currentSize <= 16) newSize = 18;
+        else if (currentSize <= 18) newSize = 20;
+        else if (currentSize <= 20) newSize = 22;
+        else newSize = 16;
+        
+        contentDisplay.style.fontSize = newSize + 'px';
+        this.showToast(`Font size: ${newSize}px`, 'info');
+    }
+
+    showLoadingOverlay(message) {
+        const overlay = document.getElementById('loadingOverlay');
+        overlay.querySelector('span').textContent = message;
+        overlay.style.display = 'flex';
+    }
+
+    hideLoadingOverlay() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icon = type === 'success' ? 'check-circle' : 
+                    type === 'error' ? 'exclamation-circle' : 
+                    type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+        
+        toast.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
         `;
         
-        notificationArea.appendChild(notification);
-
-        // Auto-remove notification after a duration
+        container.appendChild(toast);
+        
+        // Auto remove after 4 seconds
         setTimeout(() => {
-            notification.classList.add('hide'); // Start fade out
-            notification.addEventListener('transitionend', () => notification.remove()); // Remove after animation
-        }, duration);
+            toast.classList.add('removing');
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 300);
+        }, 4000);
     }
 }
 
-// Initialize the app when the page loads
+// Initialize the app 
 const app = new BookReaderApp();
