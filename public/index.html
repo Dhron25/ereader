@@ -3,23 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eReader - Dark Mode</title>
+    <title>eReader - NotebookLM Style</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        /* Import Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@300;400;500;600;700&display=swap');
+
+        /* CSS Variables */
         :root {
-            --bg-primary: #0a0a0a;
-            --bg-secondary: #1a1a1a;
-            --bg-tertiary: #2a2a2a;
-            --text-primary: #ffffff;
-            --text-secondary: #b0b0b0;
-            --text-muted: #6a6a6a;
-            --accent: #4a9eff;
-            --accent-hover: #6bb6ff;
-            --success: #4ade80;
-            --error: #f87171;
-            --warning: #fbbf24;
-            --border: #333;
-            --border-hover: #555;
+            --primary-color: #1a73e8;
+            --primary-hover: #1557b5;
+            --background: #202124;
+            --surface: #303134;
+            --surface-2: #3c4043;
+            --surface-3: #5f6368;
+            --on-surface: #e8eaed;
+            --on-surface-variant: #9aa0a6;
+            --outline: #5f6368;
+            --outline-variant: #3c4043;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --shadow-2: rgba(0, 0, 0, 0.4);
+            --radius: 8px;
+            --radius-large: 16px;
+            --spacing: 16px;
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
@@ -29,109 +37,466 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            line-height: 1.6;
-            min-height: 100vh;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background);
+            color: var(--on-surface);
+            line-height: 1.5;
+            overflow-x: hidden;
         }
 
-        .container {
+        /* Header */
+        .main-header {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            padding: 0 24px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
         }
 
-        .header {
-            text-align: center;
-            padding: 30px 0;
-            border-bottom: 2px solid var(--border);
-            margin-bottom: 30px;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .header h1 {
-            font-size: 3rem;
-            background: linear-gradient(45deg, var(--accent), var(--accent-hover));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
+        .logo i {
+            font-size: 24px;
+            color: var(--primary-color);
         }
 
-        .header p {
-            color: var(--text-secondary);
-            font-size: 1.2rem;
+        .logo h1 {
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--on-surface);
         }
 
-        .main-grid {
-            display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 30px;
-            height: calc(100vh - 200px);
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        .sidebar {
-            background: var(--bg-secondary);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid var(--border);
-            overflow-y: auto;
+        .icon-btn {
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            color: var(--on-surface-variant);
+            transition: var(--transition);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
+        .icon-btn:hover {
+            background-color: var(--surface-2);
+        }
+
+        /* Navigation */
+        .nav-container {
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--outline);
+            padding: 0 24px;
+        }
+
+        .nav-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-tab {
+            background: none;
+            border: none;
+            color: var(--on-surface-variant);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 0;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .nav-tab.active {
+            color: var(--on-surface);
+        }
+
+        .nav-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            border-radius: 1px;
+        }
+
+        .nav-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background-color: var(--surface-2);
+            border-radius: var(--radius);
+            padding: 4px;
+            border: 1px solid var(--outline);
+        }
+
+        .view-btn {
+            background: none;
+            border: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--on-surface-variant);
+            transition: var(--transition);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .view-btn.active {
+            background-color: var(--surface-3);
+            color: var(--on-surface);
+        }
+
+        .sort-dropdown {
+            background: var(--surface-2);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius);
+            padding: 8px 12px;
+            color: var(--on-surface);
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 120px;
+        }
+
+        .sort-dropdown:hover {
+            background-color: var(--surface-3);
+        }
+
+        .create-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .create-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Main Content */
         .main-content {
-            background: var(--bg-secondary);
-            border-radius: 15px;
-            padding: 25px;
-            border: 1px solid var(--border);
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--on-surface);
+        }
+
+        .see-all-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: var(--transition);
+        }
+
+        .see-all-link:hover {
+            color: var(--primary-hover);
+        }
+
+        /* Notebooks Grid */
+        .notebooks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+
+        .notebook-card {
+            background: var(--surface);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius-large);
+            padding: 24px;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            min-height: 200px;
             display: flex;
             flex-direction: column;
         }
 
-        .card {
-            background: var(--bg-tertiary);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 1px solid var(--border);
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--border-hover);
+        .notebook-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-2);
         }
 
-        .card h3 {
-            color: var(--text-primary);
-            margin-bottom: 15px;
-            font-size: 1.3rem;
+        .create-notebook {
+            background: var(--surface);
+            border: 2px dashed var(--outline);
+            border-radius: var(--radius-large);
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .create-notebook:hover {
+            border-color: var(--primary-color);
+            background-color: var(--surface-2);
+        }
+
+        .create-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--surface-2);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+            margin-bottom: 16px;
         }
 
-        .card h3 i {
-            color: var(--accent);
+        .create-icon i {
+            font-size: 20px;
+            color: var(--on-surface-variant);
+        }
+
+        .create-notebook h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--on-surface);
+        }
+
+        .notebook-icon {
+            width: 48px;
+            height: 48px;
+            background: #fbbf24;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .notebook-icon i {
+            color: white;
+            font-size: 24px;
+        }
+
+        .notebook-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--on-surface);
+            margin-bottom: auto;
+        }
+
+        .notebook-meta {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+            margin-top: 16px;
+        }
+
+        .notebook-options {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: var(--radius);
+            opacity: 0;
+            transition: var(--transition);
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notebook-card:hover .notebook-options {
+            opacity: 1;
+        }
+
+        .notebook-options:hover {
+            background-color: var(--surface-2);
+        }
+
+        /* App Layout (when entering a notebook) */
+        .app-layout {
+            display: none;
+            grid-template-columns: 320px 1fr 320px;
+            height: 100vh;
+            background: var(--background);
+        }
+
+        .app-layout.active {
+            display: grid;
+        }
+
+        .panel {
+            background: var(--surface);
+            border-right: 1px solid var(--outline);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel:last-child {
+            border-right: none;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--outline);
+            min-height: 64px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--on-surface);
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--on-surface-variant);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .back-btn:hover {
+            background-color: var(--surface-2);
+        }
+
+        .panel-actions {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .action-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .action-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .action-btn.secondary {
+            background: var(--surface-2);
+            color: var(--on-surface);
+            border: 1px solid var(--outline);
+        }
+
+        .action-btn.secondary:hover {
+            background: var(--surface-3);
+        }
+
+        .panel-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
         }
 
         .upload-zone {
-            border: 2px dashed var(--border);
-            border-radius: 12px;
+            border: 2px dashed var(--outline);
+            border-radius: var(--radius-large);
             padding: 40px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
-            background: var(--bg-primary);
+            transition: var(--transition);
+            background: var(--surface-2);
         }
 
         .upload-zone:hover {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+            background: var(--surface-3);
         }
 
         .upload-zone.dragover {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+            background: var(--surface-3);
             transform: scale(1.02);
         }
 
@@ -141,86 +506,40 @@
 
         .upload-zone .upload-icon {
             font-size: 3rem;
-            color: var(--accent);
+            color: var(--primary-color);
             margin-bottom: 15px;
         }
 
         .upload-zone .upload-text {
-            color: var(--text-secondary);
+            color: var(--on-surface-variant);
             font-size: 1.1rem;
         }
 
-        .btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-        }
-
-        .btn:hover {
-            background: var(--accent-hover);
-            transform: translateY(-2px);
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-success {
-            background: var(--success);
-        }
-
-        .btn-success:hover {
-            background: #22c55e;
-        }
-
-        .btn-danger {
-            background: var(--error);
-        }
-
-        .btn-danger:hover {
-            background: #ef4444;
-        }
-
-        .btn-small {
-            padding: 8px 12px;
-            font-size: 0.9rem;
-        }
-
         .file-list {
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
         }
 
         .file-item {
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 8px;
+            background: var(--surface-2);
+            border: 1px solid var(--outline);
+            border-radius: var(--radius);
             padding: 15px;
             margin-bottom: 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
 
         .file-item:hover {
-            border-color: var(--border-hover);
-            transform: translateX(5px);
+            background: var(--surface-3);
+            transform: translateY(-1px);
         }
 
         .file-item.active {
-            border-color: var(--accent);
-            background: var(--bg-secondary);
+            border-color: var(--primary-color);
+            background: var(--surface-3);
         }
 
         .file-info {
@@ -228,13 +547,13 @@
         }
 
         .file-name {
-            color: var(--text-primary);
+            color: var(--on-surface);
             font-weight: 500;
             margin-bottom: 5px;
         }
 
         .file-meta {
-            color: var(--text-muted);
+            color: var(--on-surface-variant);
             font-size: 0.9rem;
         }
 
@@ -243,28 +562,198 @@
             gap: 8px;
         }
 
-        .controls {
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: var(--radius);
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        /* Middle Panel - Book Display */
+        .book-display {
             display: flex;
-            gap: 15px;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .book-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--outline);
+        }
+
+        .book-title {
+            font-size: 24px;
+            font-weight: 500;
+            color: var(--on-surface);
+            margin-bottom: 8px;
+        }
+
+        .book-meta {
+            font-size: 14px;
+            color: var(--on-surface-variant);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .book-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 16px;
+            line-height: 1.6;
+            color: var(--on-surface);
+        }
+
+        .book-content-text {
+            white-space: pre-wrap;
+            max-width: 100%;
+            word-wrap: break-word;
+        }
+
+        .book-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--on-surface-variant);
+            text-align: center;
+        }
+
+        .book-placeholder i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--outline);
+        }
+
+        .book-placeholder h3 {
+            font-size: 18px;
+            color: var(--on-surface);
+            margin-bottom: 10px;
+        }
+
+        .book-placeholder p {
+            font-size: 14px;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+
+        .chat-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--on-surface-variant);
+        }
+
+        .chat-empty i {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .chat-empty h3 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: var(--on-surface);
+        }
+
+        .upload-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .upload-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--on-surface-variant);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .empty-state h3 {
+            color: var(--on-surface);
+            margin-bottom: 10px;
+        }
+
+        .audio-controls {
+            display: flex;
+            gap: 12px;
             align-items: center;
             margin-bottom: 20px;
-            padding: 15px;
-            background: var(--bg-tertiary);
-            border-radius: 10px;
-            border: 1px solid var(--border);
+            padding: 16px;
+            background: var(--surface-2);
+            border-radius: var(--radius);
+            border: 1px solid var(--outline);
+        }
+
+        .control-btn {
+            background: var(--surface-3);
+            border: 1px solid var(--outline);
+            color: var(--on-surface);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+
+        .control-btn:hover {
+            background: var(--primary-color);
+            color: white;
         }
 
         .speed-control {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             margin-left: auto;
         }
 
         .speed-control input {
             width: 120px;
             height: 6px;
-            background: var(--border);
+            background: var(--outline);
             border-radius: 3px;
             outline: none;
             appearance: none;
@@ -275,47 +764,24 @@
             -webkit-appearance: none;
             width: 20px;
             height: 20px;
-            background: var(--accent);
+            background: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
         }
 
-        .content-display {
-            flex: 1;
-            background: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 25px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            font-size: 1.1rem;
-            line-height: 1.8;
-            color: var(--text-primary);
+        .speed-display {
+            font-weight: 500;
+            color: var(--on-surface);
+            min-width: 40px;
         }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: var(--text-muted);
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            color: var(--accent);
-        }
-
-        .empty-state h3 {
-            color: var(--text-secondary);
-            margin-bottom: 10px;
-        }
-
-        .notification {
+        /* Toast Notifications */
+        .toast {
             position: fixed;
             top: 20px;
             right: 20px;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 16px 24px;
+            border-radius: var(--radius);
             color: white;
             font-weight: 500;
             z-index: 1000;
@@ -323,164 +789,247 @@
             transition: transform 0.3s ease;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
-        .notification.show {
+        .toast.show {
             transform: translateX(0);
         }
 
-        .notification.success {
-            background: var(--success);
+        .toast.success {
+            background: #22c55e;
         }
 
-        .notification.error {
-            background: var(--error);
+        .toast.error {
+            background: #ef4444;
         }
 
-        .notification.info {
-            background: var(--accent);
+        .toast.info {
+            background: var(--primary-color);
         }
 
-        .loading {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-muted);
-        }
-
-        .loading i {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Custom scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-tertiary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--border-hover);
-        }
-
-        @media (max-width: 1024px) {
-            .main-grid {
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-layout {
                 grid-template-columns: 1fr;
-                height: auto;
+                grid-template-rows: auto auto auto;
             }
             
-            .sidebar {
-                order: 2;
+            .panel {
+                border-right: none;
+                border-bottom: 1px solid var(--outline);
             }
             
-            .main-content {
-                order: 1;
-                min-height: 600px;
+            .panel:last-child {
+                border-bottom: none;
             }
+            
+            .notebooks-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .nav-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+        }
+
+        /* Hidden elements */
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1><i class="fas fa-book-open"></i> eReader</h1>
-            <p>Upload and read your documents with AI voice synthesis</p>
-        </div>
+    <!-- Landing Page -->
+    <div id="landingPage">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-book-open"></i>
+                    <h1>eReader</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="icon-btn">
+                        <i class="fas fa-th"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
 
-        <div class="main-grid">
-            <!-- Sidebar -->
-            <div class="sidebar">
-                <!-- Upload Section -->
-                <div class="card">
-                    <h3><i class="fas fa-cloud-upload-alt"></i> Upload Document</h3>
-                    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-                        <input type="file" id="fileInput" accept=".pdf,.txt,.docx" onchange="handleFileSelect(this)">
-                        <div class="upload-icon">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <div class="upload-text">
-                            <div>Click to upload or drag & drop</div>
-                            <small>PDF, TXT, DOCX files (max 50MB)</small>
-                        </div>
+        <!-- Navigation -->
+        <nav class="nav-container">
+            <div class="nav-content">
+                <div class="nav-tabs">
+                    <button class="nav-tab active">All</button>
+                    <button class="nav-tab">My notebooks</button>
+                </div>
+                <div class="nav-controls">
+                    <div class="view-toggle">
+                        <button class="view-btn active">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn">
+                            <i class="fas fa-list"></i>
+                        </button>
                     </div>
-                    <div id="selectedFile" style="display: none; margin-top: 10px; padding: 10px; background: var(--bg-primary); border-radius: 8px; border: 1px solid var(--border);">
-                        <div id="fileName" style="color: var(--text-primary); font-weight: 500;"></div>
-                        <div id="fileSize" style="color: var(--text-muted); font-size: 0.9rem;"></div>
+                    <div class="sort-dropdown">
+                        <span>Most recent</span>
+                        <i class="fas fa-chevron-down"></i>
                     </div>
-                    <button class="btn btn-success" onclick="uploadFile()" style="width: 100%; margin-top: 15px;">
+                    <button class="create-btn" onclick="createNewNotebook()">
+                        <i class="fas fa-plus"></i>
+                        Create new
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h2 class="section-title">Recent notebooks</h2>
+                <a href="#" class="see-all-link">
+                    See all
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            </div>
+            <div class="notebooks-grid">
+                <div class="create-notebook" onclick="createNewNotebook()">
+                    <div class="create-icon">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h3>Create new notebook</h3>
+                </div>
+                <div id="notebooksList">
+                    <!-- Notebooks will be loaded here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- App Layout (Hidden by default) -->
+    <div id="appLayout" class="app-layout">
+        <!-- Sources Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <button class="back-btn" onclick="showLandingPage()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h2 class="panel-title">Sources</h2>
+                <button class="icon-btn">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+            
+            <div class="panel-actions">
+                <button class="action-btn" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-plus"></i>
+                    Add
+                </button>
+                <button class="action-btn secondary">
+                    <i class="fas fa-compass"></i>
+                    Discover
+                </button>
+            </div>
+
+            <div class="panel-content">
+                <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept=".pdf,.txt,.docx" onchange="handleFileSelect(this)">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">
+                        <div>Click to upload or drag & drop</div>
+                        <small>PDF, TXT, DOCX files (max 50MB)</small>
+                    </div>
+                </div>
+                
+                <div id="selectedFile" style="display: none; margin-top: 16px; padding: 16px; background: var(--surface-2); border-radius: var(--radius); border: 1px solid var(--outline);">
+                    <div id="fileName" style="color: var(--on-surface); font-weight: 500; margin-bottom: 4px;"></div>
+                    <div id="fileSize" style="color: var(--on-surface-variant); font-size: 0.9rem;"></div>
+                    <button class="upload-btn" onclick="uploadFile()" style="margin-top: 12px;">
                         <i class="fas fa-upload"></i> Upload Document
                     </button>
                 </div>
-
-                <!-- Files List -->
-                <div class="card">
-                    <h3><i class="fas fa-folder"></i> Your Documents</h3>
-                    <button class="btn btn-small" onclick="loadFiles()" style="margin-bottom: 15px;">
-                        <i class="fas fa-sync-alt"></i> Refresh
-                    </button>
-                    <div id="filesList" class="file-list">
-                        <div class="loading">
-                            <i class="fas fa-spinner"></i> Loading documents...
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="main-content">
-                <div class="card" style="margin-bottom: 0; flex: 1; display: flex; flex-direction: column;">
-                    <h3><i class="fas fa-book-reader"></i> Document Reader</h3>
-                    
-                    <!-- Controls -->
-                    <div class="controls">
-                        <button class="btn" onclick="playText()">
-                            <i class="fas fa-play"></i> Play
-                        </button>
-                        <button class="btn" onclick="pauseText()">
-                            <i class="fas fa-pause"></i> Pause
-                        </button>
-                        <button class="btn" onclick="stopText()">
-                            <i class="fas fa-stop"></i> Stop
-                        </button>
-                        
-                        <div class="speed-control">
-                            <label style="color: var(--text-secondary);">Speed:</label>
-                            <input type="range" id="speedControl" min="0.5" max="2" value="1" step="0.1" onchange="updateSpeed(this.value)">
-                            <span id="speedValue" style="color: var(--text-primary); font-weight: 500;">1.0x</span>
-                        </div>
-                    </div>
-                    
-                    <!-- Content -->
-                    <div id="bookContent" class="content-display">
-                        <div class="empty-state">
-                            <i class="fas fa-book"></i>
-                            <h3>No document selected</h3>
-                            <p>Upload a document and click "Read" to get started</p>
-                        </div>
-                    </div>
+                
+                <div id="filesList" class="file-list" style="margin-top: 20px;">
+                    <!-- Files will be loaded here -->
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="notification" class="notification"></div>
+        <!-- Middle Panel - Book Display -->
+        <div class="panel book-display">
+            <div class="book-header">
+                <h1 id="bookTitle" class="book-title">Select a document to read</h1>
+                <div id="bookMeta" class="book-meta">
+                    <span id="wordCount">0 words</span>
+                    <span id="charCount">0 characters</span>
+                    <span id="readTime">0 min read</span>
+                </div>
+            </div>
+            
+            <div class="book-content">
+                <div id="bookContentArea" class="book-placeholder">
+                    <i class="fas fa-book-open"></i>
+                    <h3>No document selected</h3>
+                    <p>Upload a document from the sidebar and click "Read" to start reading</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Studio Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Studio</h2>
+                <button class="icon-btn">
+                    <i class="fas fa-ellipsis-v"></i>
+                </button>
+            </div>
+            
+            <div class="panel-content">
+                <div class="audio-controls">
+                    <button class="control-btn" onclick="playText()">
+                        <i class="fas fa-play"></i> Play
+                    </button>
+                    <button class="control-btn" onclick="pauseText()">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button class="control-btn" onclick="stopText()">
+                        <i class="fas fa-stop"></i> Stop
+                    </button>
+                    
+                    <div class="speed-control">
+                        <label>Speed:</label>
+                        <input type="range" id="speedControl" min="0.5" max="2" value="1" step="0.1" onchange="updateSpeed(this.value)">
+                        <span id="speedValue" class="speed-display">1.0x</span>
+                    </div>
+                </div>
+                
+                <div class="chat-area">
+                    <div class="chat-empty">
+                        <i class="fas fa-upload"></i>
+                        <h3>No document selected</h3>
+                        <p>Upload a document and click "Read" to get started</p>
+                        <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                            Upload a source
+                        </button>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
 
     <script>
         // Global variables
         let currentText = '';
         let currentFilename = '';
+        let currentDocumentTitle = '';
         let speechSynthesis = window.speechSynthesis;
         let currentUtterance = null;
         let isPlaying = false;
@@ -491,9 +1040,23 @@
             loadFiles();
         };
 
+        // Show landing page
+        function showLandingPage() {
+            document.getElementById('landingPage').classList.remove('hidden');
+            document.getElementById('appLayout').classList.remove('active');
+        }
+
+        // Create new notebook / Show app
+        function createNewNotebook() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('appLayout').classList.add('active');
+            loadFiles();
+        }
+
         // Setup drag and drop
         function setupDragAndDrop() {
             const uploadZone = document.querySelector('.upload-zone');
+            if (!uploadZone) return;
             
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 uploadZone.addEventListener(eventName, preventDefaults, false);
@@ -565,7 +1128,6 @@
             })
             .then(response => response.json())
             .then(data => {
-                console.log('Upload response:', data);
                 if (data.success) {
                     showNotification('File uploaded successfully!', 'success');
                     fileInput.value = '';
@@ -576,7 +1138,6 @@
                 }
             })
             .catch(error => {
-                console.error('Upload error:', error);
                 showNotification('Upload failed: ' + error.message, 'error');
             });
         }
@@ -584,80 +1145,124 @@
         // Load files
         function loadFiles() {
             const filesList = document.getElementById('filesList');
-            filesList.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading documents...</div>';
-
+            const notebooksList = document.getElementById('notebooksList');
+            
             fetch('/files')
             .then(response => response.json())
             .then(data => {
-                console.log('Files response:', data);
                 if (data.success) {
                     const files = data.files;
-                    if (files.length === 0) {
-                        filesList.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No documents found</p></div>';
-                        return;
+                    
+                    // Update files list in app
+                    if (filesList) {
+                        if (files.length === 0) {
+                            filesList.innerHTML = '<div class="empty-state"><i class="fas fa-folder-open"></i><p>No documents found</p></div>';
+                        } else {
+                            filesList.innerHTML = files.map(file => `
+                                <div class="file-item" data-filename="${file.filename}">
+                                    <div class="file-info">
+                                        <div class="file-name">${file.originalName}</div>
+                                        <div class="file-meta">${formatFileSize(file.size)} • ${new Date(file.uploadDate).toLocaleDateString()}</div>
+                                    </div>
+                                    <div class="file-actions">
+                                        <button class="btn-small btn-primary" onclick="readFile('${file.filename}', '${file.originalName}')">
+                                            <i class="fas fa-book-open"></i> Read
+                                        </button>
+                                        <button class="btn-small btn-danger" onclick="deleteFile('${file.filename}', '${file.originalName}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
                     }
-
-                    filesList.innerHTML = files.map(file => `
-                        <div class="file-item ${file.filename === currentFilename ? 'active' : ''}" data-filename="${file.filename}">
-                            <div class="file-info">
-                                <div class="file-name">${file.originalName}</div>
-                                <div class="file-meta">${formatFileSize(file.size)} • ${new Date(file.uploadDate).toLocaleDateString()}</div>
-                            </div>
-                            <div class="file-actions">
-                                <button class="btn btn-small" onclick="readFile('${file.filename}', '${file.originalName}')">
-                                    <i class="fas fa-book-open"></i> Read
-                                </button>
-                                <button class="btn btn-small btn-danger" onclick="deleteFile('${file.filename}', '${file.originalName}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    `).join('');
+                    
+                    // Update notebooks list on landing page
+                    if (notebooksList) {
+                        if (files.length === 0) {
+                            notebooksList.innerHTML = '';
+                        } else {
+                            notebooksList.innerHTML = files.map(file => `
+                                <div class="notebook-card" onclick="openNotebook('${file.filename}', '${file.originalName}')">
+                                    <div class="notebook-icon">
+                                        <i class="fas fa-folder"></i>
+                                    </div>
+                                    <button class="notebook-options">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <h3 class="notebook-title">${file.originalName}</h3>
+                                    <div class="notebook-meta">
+                                        ${new Date(file.uploadDate).toLocaleDateString()} • 1 source
+                                    </div>
+                                </div>
+                            `).join('');
+                        }
+                    }
                 } else {
-                    filesList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading files</p></div>';
-                    showNotification(data.error || 'Failed to load files', 'error');
+                    showNotification('Failed to load files', 'error');
                 }
             })
             .catch(error => {
-                console.error('Load files error:', error);
-                filesList.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><p>Error loading files</p></div>';
                 showNotification('Error loading files: ' + error.message, 'error');
             });
         }
 
+        // Open notebook
+        function openNotebook(filename, originalName) {
+            createNewNotebook();
+            readFile(filename, originalName);
+        }
+
         // Read file
         function readFile(filename, originalName) {
-            const bookContent = document.getElementById('bookContent');
-            bookContent.innerHTML = '<div class="loading"><i class="fas fa-spinner"></i> Loading document...</div>';
+            const bookContentArea = document.getElementById('bookContentArea');
+            const bookTitle = document.getElementById('bookTitle');
+            const bookMeta = document.getElementById('bookMeta');
+            
+            // Show loading state
+            bookContentArea.innerHTML = '<div class="book-placeholder"><i class="fas fa-spinner fa-spin"></i><h3>Loading document...</h3></div>';
+            bookTitle.textContent = originalName;
 
-            // Update active file
             currentFilename = filename;
+            currentDocumentTitle = originalName;
+            
+            // Update file list active state
             document.querySelectorAll('.file-item').forEach(item => {
                 item.classList.remove('active');
             });
-            document.querySelector(`[data-filename="${filename}"]`).classList.add('active');
+            document.querySelector(`[data-filename="${filename}"]`)?.classList.add('active');
 
             fetch(`/read/${filename}`)
             .then(response => response.json())
             .then(data => {
-                console.log('Read response:', data);
                 if (data.success) {
                     currentText = data.content;
                     if (currentText.trim() === '') {
-                        bookContent.innerHTML = '<div class="empty-state"><i class="fas fa-file-alt"></i><h3>Document is empty</h3><p>This document contains no readable text</p></div>';
+                        bookContentArea.innerHTML = '<div class="book-placeholder"><i class="fas fa-file-alt"></i><h3>Document is empty</h3><p>This document contains no readable text</p></div>';
                         showNotification('Document appears to be empty', 'error');
                     } else {
-                        bookContent.textContent = currentText;
+                        // Update book content
+                        bookContentArea.innerHTML = `<div class="book-content-text">${currentText}</div>`;
+                        
+                        // Update book meta information
+                        const words = currentText.trim().split(/\s+/).length;
+                        const characters = currentText.length;
+                        const readTime = Math.ceil(words / 200); // Assuming 200 words per minute
+                        
+                        document.getElementById('wordCount').textContent = `${words.toLocaleString()} words`;
+                        document.getElementById('charCount').textContent = `${characters.toLocaleString()} characters`;
+                        document.getElementById('readTime').textContent = `${readTime} min read`;
+                        
+                        bookMeta.style.display = 'flex';
                         showNotification('Document loaded successfully!', 'success');
                     }
                 } else {
-                    bookContent.innerHTML = `<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>${data.error}</p></div>`;
+                    bookContentArea.innerHTML = `<div class="book-placeholder"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>${data.error}</p></div>`;
                     showNotification(data.error || 'Failed to load document', 'error');
                 }
             })
             .catch(error => {
-                console.error('Read error:', error);
-                bookContent.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>Network error occurred</p></div>';
+                bookContentArea.innerHTML = '<div class="book-placeholder"><i class="fas fa-exclamation-triangle"></i><h3>Error loading document</h3><p>Network error occurred</p></div>';
                 showNotification('Error reading file: ' + error.message, 'error');
             });
         }
@@ -676,7 +1281,10 @@
                     if (filename === currentFilename) {
                         currentText = '';
                         currentFilename = '';
-                        document.getElementById('bookContent').innerHTML = '<div class="empty-state"><i class="fas fa-book"></i><h3>No document selected</h3><p>Upload a document and click "Read" to get started</p></div>';
+                        currentDocumentTitle = '';
+                        document.getElementById('bookTitle').textContent = 'Select a document to read';
+                        document.getElementById('bookContentArea').innerHTML = '<div class="book-placeholder"><i class="fas fa-book-open"></i><h3>No document selected</h3><p>Upload a document from the sidebar and click "Read" to start reading</p></div>';
+                        document.getElementById('bookMeta').style.display = 'none';
                     }
                     loadFiles();
                 } else {
@@ -753,12 +1361,17 @@
 
         // Show notification
         function showNotification(message, type = 'info') {
-            const notification = document.getElementById('notification');
+            const notification = document.createElement('div');
+            notification.className = `toast ${type} show`;
             notification.innerHTML = `<i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i> ${message}`;
-            notification.className = `notification ${type} show`;
+            
+            document.body.appendChild(notification);
 
             setTimeout(() => {
                 notification.classList.remove('show');
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
             }, 4000);
         }
     </script>
