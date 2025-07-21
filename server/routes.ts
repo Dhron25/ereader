@@ -4,37 +4,29 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import cors from "cors";
-
-// Dynamic import for parsers
-let mammoth: any;
-
-async function initParsers() {
-  try {
-    if (!mammoth) {
-      mammoth = await import("mammoth");
-    }
-  } catch (error) {
-    console.error('Error initializing parsers:', error);
-    throw error;
-  }
-}
+import express from "express";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   app.use(cors());
-  
+
   // Ensure uploads directory exists
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Multer configuration
+  // Statically serve the uploaded EPUB files
+  app.use('/uploads', express.static(uploadsDir));
+
+  // Multer configuration for EPUB files
   const storage = multer.diskStorage({
     destination: function (req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) {
       cb(null, uploadsDir);
     },
     filename: function (req: Express.Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) {
-      cb(null, Date.now() + '-' + file.originalname);
+      // Sanitize filename to prevent directory traversal
+      const safeOriginalName = file.originalname.replace(/[^a-z0-9_.\-]/gi, '_').toLowerCase();
+      cb(null, Date.now() + '-' + safeOriginalName);
     }
   });
 
@@ -42,17 +34,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     storage: storage,
     limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
     fileFilter: function (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
-      const allowedTypes = /pdf|txt|docx/;
+      const allowedTypes = /epub/;
       const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-      const mimetype = allowedTypes.test(file.mimetype) || 
-                      file.mimetype === 'application/pdf' ||
-                      file.mimetype === 'text/plain' ||
-                      file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+      const mimetype = file.mimetype === 'application/epub+zip';
       
       if (extname && mimetype) {
         return cb(null, true);
       } else {
-        cb(new Error('Only PDF, TXT, and DOCX files are allowed'));
+        cb(new Error('Only .epub files are allowed'));
       }
     }
   });
@@ -62,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const file = req.file as Express.Multer.File | undefined;
     
     if (!file) {
-      return res.status(400).json({ success: false, error: 'No file uploaded' });
+      return res.status(400).json({ success: false, error: 'No file uploaded or invalid file type' });
     }
     
     res.json({ 
@@ -79,27 +68,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const files = fs.readdirSync(uploadsDir);
       
       const fileList = files
-        .filter(file => {
-          const ext = path.extname(file).toLowerCase();
-          return ['.pdf', '.txt', '.docx'].includes(ext);
-        })
+        .filter(file => path.extname(file).toLowerCase() === '.epub')
         .map(file => {
           const stats = fs.statSync(path.join(uploadsDir, file));
-          const ext = path.extname(file).toLowerCase();
-          let mimeType = 'application/octet-stream';
-          
-          if (ext === '.pdf') mimeType = 'application/pdf';
-          else if (ext === '.txt') mimeType = 'text/plain';
-          else if (ext === '.docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
-          
           return {
             filename: file,
             originalName: file.split('-').slice(1).join('-'),
             size: stats.size,
-            mimeType,
+            mimeType: 'application/epub+zip',
             uploadDate: stats.mtime.toISOString(),
           };
-        });
+        })
+        .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
       
       res.json({ success: true, files: fileList });
     } catch (error) {
@@ -108,43 +88,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Read file endpoint
-  app.get('/api/read/:filename', async (req: Request, res: Response) => {
-    const filename = req.params.filename;
-    const filePath = path.join(uploadsDir, filename);
-    
-    try {
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ success: false, error: 'File not found' });
-      }
-      
-      // Initialize parsers if needed
-      await initParsers();
-      
-      const ext = path.extname(filename).toLowerCase();
-      let content = '';
-      
-      if (ext === '.pdf') {
-        // For now, handle PDFs with basic info until we fix the parsing
-        const stats = fs.statSync(filePath);
-        content = `PDF Document\nFile: ${filename}\nSize: ${Math.round(stats.size / 1024)} KB\nUploaded: ${new Date().toLocaleString()}\n\n[PDF text extraction will be implemented with a working PDF parser]`;
-      } else if (ext === '.txt') {
-        content = fs.readFileSync(filePath, 'utf8');
-      } else if (ext === '.docx') {
-        const result = await mammoth.extractRawText({ path: filePath });
-        content = result.value;
-      }
-      
-      res.json({ success: true, content: content });
-    } catch (error) {
-      console.error('Error reading file:', error);
-      res.status(500).json({ success: false, error: 'Error reading file: ' + (error as Error).message });
-    }
-  });
-
   // Delete file endpoint
   app.delete('/api/delete/:filename', (req: Request, res: Response) => {
     const filename = req.params.filename;
+    // Security: prevent path traversal
+    if (filename.includes('..') || filename.includes('/')) {
+        return res.status(400).json({ success: false, error: 'Invalid filename' });
+    }
     const filePath = path.join(uploadsDir, filename);
     
     try {

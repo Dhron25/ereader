@@ -4,6 +4,8 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { VoiceControls } from './voice-controls';
 import { Document, DocumentStats, ReadingProgress } from '@/types/document';
+import { useSpeech } from '@/hooks/use-speech';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReadingAssistantProps {
   document: Document | null;
@@ -13,12 +15,22 @@ interface ReadingAssistantProps {
 }
 
 export function ReadingAssistant({ document, content, stats, progress }: ReadingAssistantProps) {
+  const speechControls = useSpeech(content);
+  const { toast } = useToast();
+
+  const handleActionClick = (featureName: string) => {
+    toast({
+      title: 'Coming Soon',
+      description: `${featureName} functionality is not yet implemented.`,
+    });
+  };
+
   const formatReadingTime = (minutes: number) => {
     if (minutes < 1) return '< 1 min';
     if (minutes < 60) return `${Math.round(minutes)} min`;
     const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-    return `${hours}h ${Math.round(remainingMinutes)}m`;
+    const remainingMinutes = Math.round(minutes % 60);
+    return `${hours}h ${remainingMinutes}m`;
   };
 
   return (
@@ -26,7 +38,7 @@ export function ReadingAssistant({ document, content, stats, progress }: Reading
       <div className="p-6 border-b border-border">
         <h2 className="text-lg font-semibold text-foreground mb-4">Reading Assistant</h2>
         
-        {document && <VoiceControls text={content} />}
+        {document && <VoiceControls {...speechControls} />}
       </div>
 
       {document && (
@@ -40,7 +52,7 @@ export function ReadingAssistant({ document, content, stats, progress }: Reading
               </div>
               <Progress value={progress.percentage} className="w-full" />
               <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{formatReadingTime(progress.timeRead)}</span>
+                <span>{formatReadingTime(progress.timeRead)} read</span>
                 <span>{formatReadingTime(progress.timeRemaining)} left</span>
               </div>
             </div>
@@ -89,29 +101,15 @@ export function ReadingAssistant({ document, content, stats, progress }: Reading
             <div className="p-6">
               <h3 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h3>
               <div className="space-y-2">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => console.log('Add bookmark')}
-                >
+                <Button variant="ghost" className="w-full justify-start" onClick={() => handleActionClick('Add Bookmark')}>
                   <Bookmark className="w-4 h-4 mr-3" />
                   Add Bookmark
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => console.log('Share document')}
-                >
+                <Button variant="ghost" className="w-full justify-start" onClick={() => handleActionClick('Share Document')}>
                   <Share className="w-4 h-4 mr-3" />
                   Share Document
                 </Button>
-                
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start"
-                  onClick={() => console.log('Export')}
-                >
+                <Button variant="ghost" className="w-full justify-start" onClick={() => handleActionClick('Export')}>
                   <Download className="w-4 h-4 mr-3" />
                   Export
                 </Button>

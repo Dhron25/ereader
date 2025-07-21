@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
-import { Upload, FileText, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Upload } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { useUploadDocument } from '@/hooks/use-documents';
 import { useToast } from '@/hooks/use-toast';
@@ -39,16 +38,12 @@ export function UploadZone() {
   };
 
   const handleFileUpload = (file: File) => {
-    const allowedTypes = [
-      'application/pdf',
-      'text/plain',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-    ];
+    const allowedType = 'application/epub+zip';
 
-    if (!allowedTypes.includes(file.type)) {
+    if (file.type !== allowedType) {
       toast({
         title: "Invalid file type",
-        description: "Please upload a PDF, TXT, or DOCX file.",
+        description: "Please upload an EPUB (.epub) file.",
         variant: "destructive",
       });
       return;
@@ -103,10 +98,10 @@ export function UploadZone() {
           </div>
           <div>
             <p className="text-sm font-medium text-foreground">
-              Drop files here or click to browse
+              Drop EPUB file here or click to browse
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              PDF, TXT, DOCX up to 50MB
+              .epub files up to 50MB
             </p>
           </div>
         </div>
@@ -114,7 +109,7 @@ export function UploadZone() {
           ref={fileInputRef}
           type="file"
           className="hidden"
-          accept=".pdf,.txt,.docx"
+          accept=".epub,application/epub+zip"
           onChange={handleFileSelect}
         />
       </div>
@@ -123,7 +118,7 @@ export function UploadZone() {
         <div className="surface-200 dark:surface-800 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-foreground">
-              Uploading document...
+              Uploading book...
             </span>
           </div>
           <Progress value={undefined} className="w-full" />

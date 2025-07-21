@@ -1,4 +1,4 @@
-import { FileText, File, Clock, MoreVertical, Trash2 } from 'lucide-react';
+import { FileText, File, BookOpen, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -19,17 +19,8 @@ export function DocumentLibrary({ selectedDocument, onDocumentSelect }: Document
 
   const documents = documentsData?.files || [];
 
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.includes('pdf')) return '📄';
-    if (mimeType.includes('word')) return '📝';
-    if (mimeType.includes('text')) return '📄';
-    return '📄';
-  };
-
   const getFileColor = (mimeType: string) => {
-    if (mimeType.includes('pdf')) return 'bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-400';
-    if (mimeType.includes('word')) return 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400';
-    if (mimeType.includes('text')) return 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400';
+    if (mimeType.includes('epub')) return 'bg-purple-100 text-purple-600 dark:bg-purple-900 dark:text-purple-400';
     return 'bg-gray-100 text-gray-600 dark:bg-gray-900 dark:text-gray-400';
   };
 
@@ -87,10 +78,10 @@ export function DocumentLibrary({ selectedDocument, onDocumentSelect }: Document
           ) : documents.length === 0 ? (
             <div className="text-center py-8">
               <div className="w-16 h-16 surface-200 dark:surface-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-8 h-8 text-muted-foreground" />
+                <BookOpen className="w-8 h-8 text-muted-foreground" />
               </div>
-              <h3 className="text-sm font-medium text-foreground mb-1">No documents yet</h3>
-              <p className="text-xs text-muted-foreground">Upload your first document to get started</p>
+              <h3 className="text-sm font-medium text-foreground mb-1">No books yet</h3>
+              <p className="text-xs text-muted-foreground">Upload your first EPUB to get started</p>
             </div>
           ) : (
             documents.map((document) => (

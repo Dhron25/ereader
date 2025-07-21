@@ -8,13 +8,6 @@ export function useDocuments() {
   });
 }
 
-export function useDocument(filename: string) {
-  return useQuery<{ success: boolean; content: string }>({
-    queryKey: ['/api/read', filename],
-    enabled: !!filename,
-  });
-}
-
 export function useUploadDocument() {
   const queryClient = useQueryClient();
   
@@ -29,7 +22,8 @@ export function useUploadDocument() {
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(errorData.error || 'Upload failed');
       }
       
       return response.json();

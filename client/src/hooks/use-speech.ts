@@ -1,56 +1,82 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { VoiceSettings } from '@/types/document';
 
-export function useSpeech() {
+export function useSpeech(text: string) {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentPosition, setCurrentPosition] = useState(0);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [settings, setSettings] = useState<VoiceSettings>({
     rate: 1,
     pitch: 1,
     volume: 1,
-    voice: 'default',
+    voice: '',
   });
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const textRef = useRef<string>('');
+  const hasContent = text && text.trim().length > 0;
 
-  const speak = useCallback((text: string) => {
-    if (!('speechSynthesis' in window)) {
-      console.error('Speech synthesis not supported');
+  const stop = useCallback(() => {
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  // Effect to stop speech if the document text changes
+  useEffect(() => {
+    stop();
+  }, [text, stop]);
+
+  useEffect(() => {
+    const handleVoicesChanged = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      setVoices(availableVoices);
+      if (!settings.voice && availableVoices.length > 0) {
+        const defaultVoice = availableVoices.find(v => v.default) || availableVoices[0];
+        if (defaultVoice) {
+          updateSettings({ voice: defaultVoice.voiceURI });
+        }
+      }
+    };
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+        handleVoicesChanged();
+    }
+    return () => {
+      if (typeof window !== 'undefined' && window.speechSynthesis) {
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        stop();
+      }
+    };
+  }, []); // Intentionally empty to run once
+
+  const speak = useCallback(() => {
+    if (!('speechSynthesis' in window) || !text) {
+      console.error('Speech synthesis not supported or no text provided.');
       return;
     }
+    stop(); // Stop any previous utterance before starting a new one
 
-    // Stop any current speech
-    window.speechSynthesis.cancel();
-
-    textRef.current = text;
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
+
+    const selectedVoice = voices.find((v) => v.voiceURI === settings.voice);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
 
     utterance.rate = settings.rate;
     utterance.pitch = settings.pitch;
     utterance.volume = settings.volume;
 
-    utterance.onstart = () => {
-      setIsPlaying(true);
-    };
-
-    utterance.onend = () => {
-      setIsPlaying(false);
-      setCurrentPosition(0);
-    };
-
-    utterance.onerror = () => {
-      setIsPlaying(false);
-      setCurrentPosition(0);
-    };
-
-    utterance.onboundary = (event) => {
-      setCurrentPosition(event.charIndex);
+    utterance.onstart = () => setIsPlaying(true);
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = (e) => {
+        console.error("Speech synthesis error:", e);
+        setIsPlaying(false);
     };
 
     window.speechSynthesis.speak(utterance);
-  }, [settings]);
+  }, [settings, voices, text, stop]);
 
   const pause = useCallback(() => {
     if (window.speechSynthesis.speaking) {
@@ -66,26 +92,9 @@ export function useSpeech() {
     }
   }, []);
 
-  const stop = useCallback(() => {
-    window.speechSynthesis.cancel();
-    setIsPlaying(false);
-    setCurrentPosition(0);
-  }, []);
-
   const updateSettings = useCallback((newSettings: Partial<VoiceSettings>) => {
     setSettings(prev => ({ ...prev, ...newSettings }));
   }, []);
 
-  return {
-    isPlaying,
-    currentPosition,
-    settings,
-    speak,
-    pause,
-    resume,
-    stop,
-    updateSettings,
-  };
+  return { isPlaying, settings, voices, speak, pause, resume, stop, updateSettings, hasContent };
 }
-
-// gg
