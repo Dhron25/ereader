@@ -1,5 +1,4 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
-import { useHashLocation } from "wouter/use-hash-location"; // This import is correct for the latest version
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,8 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 
-// This component contains your page routes
-function AppRouter() {
+function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
@@ -22,13 +20,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        {/*
-          This tells wouter to use hash-based routing (e.g., /#/page)
-          which works perfectly on static hosts like GitHub Pages.
-        */}
-        <WouterRouter hook={useHashLocation()}>
-          <AppRouter />
-        </WouterRouter>
+        <Router />
       </TooltipProvider>
     </QueryClientProvider>
   );
