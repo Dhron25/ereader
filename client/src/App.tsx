@@ -1,4 +1,5 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
+import { useHashLocation } from "wouter/use-hash-location"; // This import is correct for the latest version
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -17,15 +18,15 @@ function AppRouter() {
 }
 
 function App() {
-  // This must match the `base` property in your vite.config.ts
-  const basepath = "/ereader";
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
-        {/* We wrap the routes in Wouter's Router to handle the base path */}
-        <WouterRouter basepath={basepath}>
+        {/*
+          This tells wouter to use hash-based routing (e.g., /#/page)
+          which works perfectly on static hosts like GitHub Pages.
+        */}
+        <WouterRouter hook={useHashLocation()}>
           <AppRouter />
         </WouterRouter>
       </TooltipProvider>
@@ -33,6 +34,4 @@ function App() {
   );
 }
 
-// THIS IS THE CRUCIAL LINE that fixes the error.
-// It makes the App component the "default" thing to export from this file.
 export default App;
