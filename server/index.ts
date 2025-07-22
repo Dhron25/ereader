@@ -66,7 +66,7 @@ app.use((req, res, next) => {
 
   
   const port = parseInt(process.env.PORT || '5000', 10);
-  const host = process.env.HOST || "localhost";
+  const host = process.env.HOST || "0.0.0.0";
   server.listen(port, host, () => {
     log(`serving on port ${port}`);
     log(`uploads directory: ${path.join(process.cwd(), 'uploads')}`);
