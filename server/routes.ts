@@ -1,3 +1,4 @@
+// server/routes.ts
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import multer from "multer";
@@ -7,16 +8,44 @@ import cors from "cors";
 import express from "express";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  app.use(cors());
+  // Configure CORS properly
+  app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Range'],
+  }));
 
-  // Ensure uploads directory exists
+  // Ensure uploads directory exists with proper permissions
   const uploadsDir = path.join(process.cwd(), 'uploads');
   if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o755 });
   }
 
-  // Statically serve the uploaded EPUB files
-  app.use('/uploads', express.static(uploadsDir));
+  // Set proper headers for EPUB files and serve them statically
+  app.use('/uploads', (req, res, next) => {
+    // Set headers for EPUB files
+    if (req.path.endsWith('.epub')) {
+      res.setHeader('Content-Type', 'application/epub+zip');
+      res.setHeader('Accept-Ranges', 'bytes');
+    }
+    
+    // Set CORS headers for uploads
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
+    
+    next();
+  }, express.static(uploadsDir, {
+    maxAge: '1d',
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, path) => {
+      if (path.endsWith('.epub')) {
+        res.setHeader('Content-Type', 'application/epub+zip');
+      }
+    }
+  }));
 
   // Multer configuration for EPUB files
   const storage = multer.diskStorage({
@@ -36,9 +65,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     fileFilter: function (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
       const allowedTypes = /epub/;
       const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-      const mimetype = file.mimetype === 'application/epub+zip';
+      const mimetype = file.mimetype === 'application/epub+zip' || file.mimetype === 'application/zip';
       
-      if (extname && mimetype) {
+      if (extname && (mimetype || file.originalname.toLowerCase().endsWith('.epub'))) {
         return cb(null, true);
       } else {
         cb(new Error('Only .epub files are allowed'));
@@ -52,6 +81,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     if (!file) {
       return res.status(400).json({ success: false, error: 'No file uploaded or invalid file type' });
+    }
+    
+    // Set proper file permissions
+    try {
+      fs.chmodSync(file.path, 0o644);
+    } catch (error) {
+      console.warn('Could not set file permissions:', error);
     }
     
     res.json({ 
@@ -70,7 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const fileList = files
         .filter(file => path.extname(file).toLowerCase() === '.epub')
         .map(file => {
-          const stats = fs.statSync(path.join(uploadsDir, file));
+          const filePath = path.join(uploadsDir, file);
+          const stats = fs.statSync(filePath);
           return {
             filename: file,
             originalName: file.split('-').slice(1).join('-'),
@@ -85,6 +122,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error reading files:', error);
       res.status(500).json({ success: false, error: 'Failed to read files' });
+    }
+  });
+
+  // Serve individual EPUB file endpoint (fallback)
+  app.get('/api/file/:filename', (req: Request, res: Response) => {
+    const filename = req.params.filename;
+    
+    // Security: prevent path traversal
+    if (filename.includes('..') || filename.includes('/')) {
+      return res.status(400).json({ success: false, error: 'Invalid filename' });
+    }
+    
+    const filePath = path.join(uploadsDir, filename);
+    
+    try {
+      if (fs.existsSync(filePath)) {
+        const stats = fs.statSync(filePath);
+        
+        res.setHeader('Content-Type', 'application/epub+zip');
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Accept-Ranges', 'bytes');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        
+        const readStream = fs.createReadStream(filePath);
+        readStream.pipe(res);
+      } else {
+        res.status(404).json({ success: false, error: 'File not found' });
+      }
+    } catch (error) {
+      console.error('Error serving file:', error);
+      res.status(500).json({ success: false, error: 'Error serving file' });
     }
   });
 
@@ -108,6 +177,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error deleting file:', error);
       res.status(500).json({ success: false, error: 'Error deleting file' });
     }
+  });
+
+  // Health check endpoint
+  app.get('/api/health', (req, res) => {
+    res.json({ success: true, message: 'Server is running' });
   });
 
   const httpServer = createServer(app);

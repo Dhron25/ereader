@@ -11,7 +11,7 @@ export interface Document {
 export interface DocumentStats {
   wordCount: number;
   characterCount: number;
-  readingTime: number;
+  readingTime: number; // in minutes
   readingLevel: string;
 }
 
@@ -19,8 +19,8 @@ export interface ReadingProgress {
   currentPosition: number;
   totalLength: number;
   percentage: number;
-  timeRead: number;
-  timeRemaining: number;
+  timeRead: number; // in minutes
+  timeRemaining: number; // in minutes
 }
 
 export interface VoiceSettings {
@@ -28,4 +28,13 @@ export interface VoiceSettings {
   pitch: number;
   volume: number;
   voice: string;
+}
+
+export interface Bookmark {
+  id: string;
+  documentId: string;
+  cfi: string;
+  text: string;
+  timestamp: string;
+  title?: string;
 }

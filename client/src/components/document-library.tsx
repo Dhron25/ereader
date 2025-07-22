@@ -1,4 +1,5 @@
-import { FileText, File, BookOpen, MoreVertical, Trash2 } from 'lucide-react';
+// client/src/components/document-library.tsx
+import { File, BookOpen, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -12,7 +13,10 @@ interface DocumentLibraryProps {
   onDocumentSelect: (document: Document) => void;
 }
 
-export function DocumentLibrary({ selectedDocument, onDocumentSelect }: DocumentLibraryProps) {
+export function DocumentLibrary({ 
+  selectedDocument, 
+  onDocumentSelect
+}: DocumentLibraryProps) {
   const { data: documentsData, isLoading } = useDocuments();
   const { mutate: deleteDocument } = useDeleteDocument();
   const { toast } = useToast();

@@ -17,17 +17,17 @@ export function AppHeader() {
     <header className="bg-surface-100 dark:bg-surface-800 border-b border-border sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 text-white shadow-lg ring-2 ring-blue-500/20">
-              <Book className="h-5 w-5" strokeWidth={2.5} />
-            </div>
+          <div className="flex items-center">
+            {/* Logo Text */}
             <div className="flex flex-col">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 bg-clip-text text-transparent tracking-tight" 
-                  style={{ fontFamily: 'ui-serif, Georgia, "Times New Roman", serif' }}>
+              <h1 
+                className="text-3xl font-medium bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 bg-clip-text text-transparent transition-all duration-300 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-800"
+                style={{ fontFamily: 'cursive' }}
+              >
                 eReader
               </h1>
-              <span className="text-xs text-muted-foreground font-medium tracking-wide">
-                Digital Library
+              <span className="text-xs text-muted-foreground font-medium tracking-wider opacity-80 hover:opacity-100 transition-opacity duration-300">
+                
               </span>
             </div>
           </div>
