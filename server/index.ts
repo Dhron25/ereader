@@ -9,21 +9,18 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ✅ Ensure uploads folder exists
+// Ensure uploads folder exists
 const uploadsPath = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsPath)) {
   fs.mkdirSync(uploadsPath, { recursive: true });
 }
 
-// ✅ Health check routes
-app.get("/", (_req, res) => {
-  res.send("Backend is running ✅");
-});
+// Health check endpoint (does NOT override frontend)
 app.get("/health", (_req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// Add security headers
+// Security headers
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
@@ -77,11 +74,11 @@ app.use((req, res, next) => {
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
-    serveStatic(app);
+    serveStatic(app); // serves your frontend build (dist/public)
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  const host = process.env.HOST || "0.0.0.0"; // ✅ needed for Render
+  const host = process.env.HOST || "0.0.0.0"; // for Render compatibility
   server.listen(port, host, () => {
     log(`serving on port ${port}`);
     log(`uploads directory: ${path.join(process.cwd(), "uploads")}`);
