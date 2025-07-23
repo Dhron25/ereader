@@ -5,7 +5,7 @@ export interface Highlight {
   id: string;
   documentId: string;
   text: string;
-  position: number;
+  position: string; // Changed from number to string for CFI
   timestamp: string;
   color: string;
 }
@@ -15,7 +15,7 @@ export interface Note {
   documentId: string;
   selectedText: string;
   noteText: string;
-  position: number;
+  position: string; // Changed from number to string for CFI
   timestamp: string;
 }
 
@@ -83,7 +83,7 @@ export function useHighlightsNotes(documentId: string | null) {
     }
   }, [documentId, getStorageKey]);
 
-  const addHighlight = useCallback((text: string, position: number, color: string = '#ffeb3b') => {
+  const addHighlight = useCallback((text: string, position: string, color: string = '#ffeb3b') => {
     if (!documentId) return null;
 
     const newHighlight: Highlight = {
@@ -102,7 +102,7 @@ export function useHighlightsNotes(documentId: string | null) {
     return newHighlight;
   }, [documentId, highlights, notes, saveToStorage]);
 
-  const addNote = useCallback((selectedText: string, noteText: string, position: number) => {
+  const addNote = useCallback((selectedText: string, noteText: string, position: string) => {
     if (!documentId) return null;
 
     const newNote: Note = {
@@ -132,6 +132,19 @@ export function useHighlightsNotes(documentId: string | null) {
     setNotes(newNotes);
     saveToStorage(highlights, newNotes);
   }, [notes, highlights, saveToStorage]);
+  
+  const updateNote = useCallback((noteId: string, newText: string) => {
+    if (!documentId) return null;
+
+    const newNotes = notes.map(note => 
+      note.id === noteId ? { ...note, noteText: newText, timestamp: new Date().toISOString() } : note
+    );
+
+    setNotes(newNotes);
+    saveToStorage(highlights, newNotes);
+
+    return newNotes.find(n => n.id === noteId);
+  }, [documentId, notes, highlights, saveToStorage]);
 
   return {
     highlights,
@@ -139,6 +152,7 @@ export function useHighlightsNotes(documentId: string | null) {
     addHighlight,
     addNote,
     removeHighlight,
-    removeNote
+    removeNote,
+    updateNote
   };
 }

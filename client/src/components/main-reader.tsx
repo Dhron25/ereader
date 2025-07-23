@@ -5,7 +5,7 @@ import { Minus, Plus, ChevronLeft, ChevronRight, BookOpen, Highlighter, StickyNo
 import { Button } from '@/components/ui/button';
 import { Document, DocumentStats, ReadingProgress } from '@/types/document';
 import { useToast } from '@/hooks/use-toast';
-import { useHighlightsNotes } from '@/hooks/use-highlights-notes';
+import { useHighlightsNotes, Note } from '@/hooks/use-highlights-notes';
 import { NoteDialog } from './note-dialog';
 
 interface MainReaderProps {
@@ -38,11 +38,10 @@ export function MainReader({
   const [highlightMode, setHighlightMode] = useState(false);
   const [noteMode, setNoteMode] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<any>(null);
-  const [showNoteDialog, setShowNoteDialog] = useState(false);
-  const [noteDialogData, setNoteDialogData] = useState<{
-    selectedText: string;
-    position: { x: number; y: number };
-    selectionPosition: number;
+  
+  const [noteDialogState, setNoteDialogState] = useState<{
+    mode: 'new' | 'edit';
+    data: Note | { selectedText: string; position: string };
   } | null>(null);
 
   const viewerRef = useRef<HTMLDivElement>(null);
@@ -53,17 +52,14 @@ export function MainReader({
   const isSetupCompleteRef = useRef(false);
   const { toast } = useToast();
 
-  // Use highlights and notes hook
   const {
     highlights,
     notes,
     addHighlight,
     addNote,
-    removeHighlight,
-    removeNote
+    updateNote,
   } = useHighlightsNotes(document?.filename || null);
 
-  // Update refs when state changes
   useEffect(() => {
     highlightModeRef.current = highlightMode;
   }, [highlightMode]);
@@ -72,172 +68,114 @@ export function MainReader({
     noteModeRef.current = noteMode;
   }, [noteMode]);
 
-  // Apply existing highlights and notes to the rendered content (without re-rendering EPUB)
   const applyHighlightsAndNotesToCurrentView = useCallback(() => {
-    if (!renditionRef.current) return;
-
+    if (!renditionRef.current || !bookRef.current) return;
     try {
       const currentView = renditionRef.current.manager?.views?._views[0];
       if (!currentView?.document) return;
-
       const doc = currentView.document as HTMLDocument;
 
-      // Clear existing annotations first
-      const existingMarks = doc.querySelectorAll('[data-highlight-id], [data-note-id]');
-      existingMarks.forEach(mark => {
+      // Clear existing annotations first to prevent duplicates
+      doc.querySelectorAll('[data-highlight-id], [data-note-id]').forEach(mark => {
         const parent = mark.parentNode;
         if (parent) {
-          parent.replaceChild(doc.createTextNode(mark.textContent || ''), mark);
+          while(mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+          parent.removeChild(mark);
           parent.normalize();
         }
       });
-
-      // Apply highlights
+      
+      // Apply highlights using CFI
       highlights.forEach(highlight => {
         try {
-          const elements = doc.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li');
-          elements.forEach((element: Element) => {
-            if (element.textContent && element.textContent.includes(highlight.text.substring(0, 50))) {
-              const walker = doc.createTreeWalker(
-                element,
-                NodeFilter.SHOW_TEXT,
-                null
-              );
-
-              let node;
-              while (node = walker.nextNode()) {
-                const textNode = node as Text;
-                const text = textNode.textContent || '';
-                const index = text.indexOf(highlight.text.substring(0, 50));
-
-                if (index !== -1) {
-                  const range = doc.createRange();
-                  range.setStart(textNode, index);
-                  range.setEnd(textNode, index + highlight.text.substring(0, 50).length);
-
-                  const mark = doc.createElement('mark');
-                  mark.style.backgroundColor = `${highlight.color}66`;
-                  mark.style.padding = '2px 0';
-                  mark.setAttribute('data-highlight-id', highlight.id);
-
-                  try {
-                    range.surroundContents(mark);
-                  } catch (e) {
-                    console.warn('Could not apply highlight:', e);
-                  }
-                  return;
-                }
-              }
-            }
-          });
+          const range = renditionRef.current.getRange(highlight.position);
+          if (range) {
+            const mark = doc.createElement('mark');
+            mark.style.backgroundColor = `${highlight.color}66`; // Add some transparency
+            mark.style.padding = '2px 0';
+            mark.setAttribute('data-highlight-id', highlight.id);
+            range.surroundContents(mark);
+          }
         } catch (error) {
-          console.warn('Error applying highlight:', error);
+          console.warn('Error applying highlight with CFI:', highlight.position, error);
         }
       });
 
-      // Apply note indicators
+      // Apply note indicators using CFI
       notes.forEach(note => {
         try {
-          const elements = doc.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li');
-          elements.forEach((element: Element) => {
-            if (element.textContent && element.textContent.includes(note.selectedText.substring(0, 50))) {
-              const noteIndicator = doc.createElement('span');
-              noteIndicator.innerHTML = ' 📝';
-              noteIndicator.style.cursor = 'pointer';
-              noteIndicator.style.color = '#3b82f6';
-              noteIndicator.style.fontSize = '12px';
-              noteIndicator.setAttribute('data-note-id', note.id);
-              noteIndicator.setAttribute('title', `Note: ${note.noteText}`);
-
-              element.appendChild(noteIndicator);
-              return;
-            }
-          });
+          const range = renditionRef.current.getRange(note.position);
+          if (range) {
+            const noteIndicator = doc.createElement('span');
+            noteIndicator.innerHTML = ' 📝';
+            noteIndicator.style.cursor = 'pointer';
+            noteIndicator.style.color = '#3b82f6'; // blue-500
+            noteIndicator.style.fontSize = '12px';
+            noteIndicator.setAttribute('data-note-id', note.id);
+            noteIndicator.setAttribute('title', `Note: ${note.noteText}`);
+            range.collapse(false); // Go to the end of the selection
+            range.insertNode(noteIndicator);
+          }
         } catch (error) {
-          console.warn('Error applying note:', error);
+          console.warn('Error applying note indicator with CFI:', note.position, error);
         }
       });
     } catch (error) {
       console.warn('Error in applyHighlightsAndNotesToCurrentView:', error);
     }
   }, [highlights, notes]);
-
-  // Handle text selection for highlighting and notes
-  const handleTextSelection = useCallback((doc: HTMLDocument, event: MouseEvent) => {
+  
+  const handleTextSelection = useCallback((doc: HTMLDocument) => {
     try {
       const selection = doc.getSelection();
       if (!selection || selection.toString().trim().length === 0) return;
 
       const selectedTextContent = selection.toString().trim();
       const range = selection.getRangeAt(0);
-
-      const rect = range.getBoundingClientRect();
-      const position = { x: rect.left, y: rect.bottom };
-      const selectionPosition = Math.floor(Math.random() * 1000);
+      const cfi = renditionRef.current.cfiFromRange(range);
 
       if (highlightModeRef.current) {
-        try {
-          const mark = doc.createElement('mark');
-          mark.style.backgroundColor = 'rgba(255, 235, 59, 0.6)';
-          mark.style.padding = '2px 0';
-          mark.setAttribute('data-highlight-id', `temp_${Date.now()}`);
-          range.surroundContents(mark);
-
-          const highlight = addHighlight(selectedTextContent, selectionPosition, '#ffeb3b');
-          if (highlight) {
-            mark.setAttribute('data-highlight-id', highlight.id);
-          }
-
-          selection.removeAllRanges();
-
-          toast({
-            title: "Text highlighted",
-            description: `"${selectedTextContent.substring(0, 30)}..." has been highlighted`,
-          });
-        } catch (error) {
-          console.warn('Could not highlight selection:', error);
-          toast({
-            title: "Highlighting failed",
-            description: "Could not highlight the selected text",
-            variant: "destructive"
-          });
-        }
-      } else if (noteModeRef.current) {
-        setNoteDialogData({
-          selectedText: selectedTextContent,
-          position,
-          selectionPosition
+        addHighlight(selectedTextContent, cfi, '#ffeb3b');
+        selection.removeAllRanges();
+        toast({
+          title: "Text highlighted",
+          description: `"${selectedTextContent.substring(0, 30)}..." has been highlighted`,
         });
-        setShowNoteDialog(true);
+      } else if (noteModeRef.current) {
+        setNoteDialogState({
+          mode: 'new',
+          data: { selectedText: selectedTextContent, position: cfi }
+        });
         selection.removeAllRanges();
       }
     } catch (error) {
       console.warn('Error in handleTextSelection:', error);
+      toast({ title: 'Annotation Error', description: 'Could not create annotation for this selection.', variant: 'destructive' });
     }
   }, [addHighlight, toast]);
 
-  // Handle note save
-  const handleNoteSave = useCallback((noteText: string) => {
-    if (!noteDialogData) return;
+  const handleSaveNote = useCallback((noteText: string) => {
+    if (!noteDialogState) return;
 
-    const note = addNote(noteDialogData.selectedText, noteText, noteDialogData.selectionPosition);
-
-    if (note) {
+    if (noteDialogState.mode === 'new') {
+      const { selectedText, position } = noteDialogState.data as { selectedText: string; position: string };
+      addNote(selectedText, noteText, position);
       toast({
         title: "Note saved",
-        description: `Note added for "${noteDialogData.selectedText.substring(0, 30)}..."`,
+        description: `Note added for "${selectedText.substring(0, 30)}..."`,
       });
-
-      // Apply the note immediately without re-rendering
-      setTimeout(() => {
-        applyHighlightsAndNotesToCurrentView();
-      }, 100);
+    } else if (noteDialogState.mode === 'edit') {
+      const noteToUpdate = noteDialogState.data as Note;
+      updateNote(noteToUpdate.id, noteText);
+      toast({
+        title: "Note updated",
+        description: `Note for "${noteToUpdate.selectedText.substring(0, 30)}..." has been updated.`,
+      });
     }
 
-    setNoteDialogData(null);
-  }, [noteDialogData, addNote, toast, applyHighlightsAndNotesToCurrentView]);
+    setNoteDialogState(null);
+  }, [noteDialogState, addNote, updateNote, toast]);
 
-  // Setup editing listeners
   const setupEditingListeners = useCallback(() => {
     if (!renditionRef.current) return;
 
@@ -245,80 +183,56 @@ export function MainReader({
       try {
         const currentView = renditionRef.current.manager?.views?._views[0];
         if (!currentView?.document) return;
-
         const doc = currentView.document as HTMLDocument;
-
-        // Apply existing highlights and notes
+        
         applyHighlightsAndNotesToCurrentView();
 
-        // Remove existing listeners
-        const existingElements = doc.querySelectorAll('[data-editable="true"]');
+        const existingElements = Array.from(doc.querySelectorAll('[data-editable="true"]'));
         existingElements.forEach((el: Element) => {
-          el.removeAttribute('data-editable');
-          (el as any).onclick = null;
-          (el as any).ondblclick = null;
-          (el as any).onmouseup = null;
-          (el as any).onmouseenter = null;
-          (el as any).onmouseleave = null;
+          const newEl = el.cloneNode(true);
+          el.parentNode?.replaceChild(newEl, el);
         });
-
-        // Add listeners to text elements
+        
         const textElements = doc.querySelectorAll('p, div, span, h1, h2, h3, h4, h5, h6, li');
-
         textElements.forEach((element: Element) => {
           const textContent = element.textContent?.trim();
           if (!textContent || textContent.length < 10) return;
-
+          
           element.setAttribute('data-editable', 'true');
-          (element as HTMLElement).style.cursor = 'text';
-          (element as HTMLElement).style.transition = 'background-color 0.2s ease';
+          const el = element as HTMLElement;
+          el.style.cursor = 'text';
+          el.style.transition = 'background-color 0.2s ease';
 
-          // Hover effects
-          element.addEventListener('mouseenter', () => {
-            if (highlightModeRef.current) {
-              (element as HTMLElement).style.backgroundColor = 'rgba(255, 235, 59, 0.2)';
-            } else if (noteModeRef.current) {
-              (element as HTMLElement).style.backgroundColor = 'rgba(33, 150, 243, 0.2)';
-            } else {
-              (element as HTMLElement).style.backgroundColor = 'rgba(158, 158, 158, 0.1)';
-            }
+          el.addEventListener('mouseenter', () => {
+            if (highlightModeRef.current) el.style.backgroundColor = 'rgba(255, 235, 59, 0.2)';
+            else if (noteModeRef.current) el.style.backgroundColor = 'rgba(33, 150, 243, 0.2)';
+            else el.style.backgroundColor = 'rgba(158, 158, 158, 0.1)';
           });
 
-          element.addEventListener('mouseleave', () => {
+          el.addEventListener('mouseleave', () => {
             if (!highlightModeRef.current && !noteModeRef.current) {
-              (element as HTMLElement).style.backgroundColor = '';
+              el.style.backgroundColor = '';
             }
           });
-
-          // Handle text selection
-          element.addEventListener('mouseup', (e: Event) => {
-            const mouseEvent = e as MouseEvent;
+          
+          el.addEventListener('mouseup', () => {
             if (highlightModeRef.current || noteModeRef.current) {
-              setTimeout(() => {
-                handleTextSelection(doc, mouseEvent);
-              }, 10);
+              setTimeout(() => handleTextSelection(doc), 10);
             }
           });
 
-          // Double-click for bookmark
-          element.addEventListener('dblclick', (e: Event) => {
-            if (highlightModeRef.current || noteModeRef.current) return;
-
+          el.addEventListener('dblclick', (e: Event) => {
+            if (highlightModeRef.current || noteModeRef.current || !addBookmark) return;
             e.preventDefault();
-
-            if (addBookmark) {
-              const position = Math.floor(Math.random() * 1000);
-              addBookmark(position, textContent.substring(0, 100));
-
-              (element as HTMLElement).style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
-              setTimeout(() => {
-                (element as HTMLElement).style.backgroundColor = '';
-              }, 2000);
-
-              toast({
-                title: "Bookmark added",
-                description: "Text has been bookmarked",
-              });
+            const range = doc.createRange();
+            range.selectNodeContents(element);
+            const cfi = new ePub.CFI(range, (renditionRef.current.currentLocation() as any)?.start?.cfi).toString();
+            const location = bookRef.current.locations.locationFromCfi(cfi);
+            if (location !== null) {
+              addBookmark(location, textContent.substring(0, 100));
+              el.style.backgroundColor = 'rgba(76, 175, 80, 0.3)';
+              setTimeout(() => { el.style.backgroundColor = ''; }, 2000);
+              toast({ title: "Bookmark added", description: "Text has been bookmarked" });
             }
           });
         });
@@ -330,220 +244,127 @@ export function MainReader({
             e.stopPropagation();
             const noteId = indicator.getAttribute('data-note-id');
             const note = notes.find(n => n.id === noteId);
-            if (note) {
-              toast({
-                title: "Note",
-                description: note.noteText,
-              });
-            }
+            if (note) setNoteDialogState({ mode: 'edit', data: note });
           });
         });
 
-        console.log(`Added editing listeners to ${textElements.length} elements`);
         isSetupCompleteRef.current = true;
 
       } catch (error) {
         console.error('Error adding editing listeners:', error);
       }
     };
-
+    
     renditionRef.current.on('rendered', addListenersToView);
-
     if (renditionRef.current.manager?.views?._views[0]) {
       addListenersToView();
     }
+
   }, [addBookmark, toast, handleTextSelection, applyHighlightsAndNotesToCurrentView, notes]);
-
-  // Extract full text from EPUB for analysis
+  
   const extractFullText = useCallback(async (book: any) => {
-    try {
-      await book.ready;
-      const textChunks: string[] = [];
-
-      console.log('Extracting text from', book.spine.items.length, 'chapters');
-
-      for (let i = 0; i < book.spine.items.length; i++) {
-        const item = book.spine.items[i];
-        try {
-          const contents = await item.load();
-          if (contents?.body) {
-            const text = contents.body.textContent || contents.body.innerText || '';
-            if (text.trim().length > 50) {
-              textChunks.push(text.replace(/\s+/g, ' ').trim());
+      try{
+        await book.ready;
+        const textChunks: string[] = [];
+        for (let i = 0; i < book.spine.items.length; i++) {
+          const item = book.spine.items[i];
+          try {
+            const contents = await item.load();
+            if (contents?.body) {
+              const text = contents.body.textContent || contents.body.innerText || '';
+              if(text.trim().length > 50) {
+                 textChunks.push(text.replace(/\s+/g, ' ').trim());
+              }
             }
+            if (contents && typeof contents.destroy === 'function') {
+              contents.destroy();
+            }
+          } catch (error) {
+            console.warn(`Error extracting chapter ${i}:`, error);
           }
-          if (contents && typeof contents.destroy === 'function') {
-            contents.destroy();
-          }
-        } catch (error) {
-          console.warn(`Error extracting chapter ${i}:`, error);
         }
-      }
-
-      const fullText = textChunks.join(' ');
-      console.log('Extracted text length:', fullText.length);
-
-      if (fullText) {
-        onContentExtracted(fullText);
-
-        const words = fullText.split(/\s+/).filter(word => word.length > 0);
-        const sentences = fullText.split(/[.!?]+/).filter(s => s.trim().length > 0);
-        const avgWordsPerSentence = sentences.length > 0 ? words.length / sentences.length : 0;
-
-        const wordCount = words.length;
-        const characterCount = fullText.length;
-        const readingTime = Math.ceil(wordCount / 200);
-
-        let readingLevel = 'Beginner';
-        if (wordCount > 10000 || avgWordsPerSentence > 20) {
-          readingLevel = 'Advanced';
-        } else if (wordCount > 5000 || avgWordsPerSentence > 15) {
-          readingLevel = 'Intermediate';
+        const fullText = textChunks.join(' ');
+        if (fullText) {
+          onContentExtracted(fullText);
+          const words = fullText.split(/\s+/).filter(word => word.length > 0);
+          const sentences = fullText.split(/[.!?]+/).filter(s => s.trim().length > 0);
+          const avgWordsPerSentence = sentences.length > 0 ? words.length / sentences.length : 0;
+          const wordCount = words.length;
+          const characterCount = fullText.length;
+          const readingTime = Math.ceil(wordCount / 200);
+          let readingLevel = 'Beginner';
+          if (wordCount > 10000 || avgWordsPerSentence > 20) readingLevel = 'Advanced';
+          else if (wordCount > 5000 || avgWordsPerSentence > 15) readingLevel = 'Intermediate';
+          const stats: DocumentStats = { wordCount, characterCount, readingTime, readingLevel };
+          onStatsUpdate(stats);
+          onProgressUpdate({ percentage: 0, timeRead: 0, timeRemaining: readingTime, currentPosition: 0, totalLength: characterCount });
         }
-
-        const stats: DocumentStats = {
-          wordCount,
-          characterCount,
-          readingTime,
-          readingLevel
-        };
-
-        onStatsUpdate(stats);
-
-        onProgressUpdate({
-          percentage: 0,
-          timeRead: 0,
-          timeRemaining: readingTime,
-          currentPosition: 0,
-          totalLength: characterCount
-        });
-
-        console.log('Document stats updated:', stats);
+      } catch(error) {
+         toast({ title: "Text extraction failed", description: "Could not extract text for analysis", variant: "destructive" });
       }
-
-    } catch (error) {
-      console.error('Error extracting text:', error);
-      toast({
-        title: "Text extraction failed",
-        description: "Could not extract text for analysis",
-        variant: "destructive",
-      });
-    }
   }, [onContentExtracted, onStatsUpdate, onProgressUpdate, toast]);
-
-  // Only re-apply annotations when highlights/notes change, without re-rendering EPUB
+  
   useEffect(() => {
     if (isSetupCompleteRef.current) {
-      // Small delay to ensure DOM is ready
       setTimeout(() => {
-        applyHighlightsAndNotesToCurrentView();
+        setupEditingListeners();
       }, 100);
     }
-  }, [highlights.length, notes.length]); // Only depend on length changes
+  }, [highlights, notes, setupEditingListeners]);
 
-  // Main effect to load EPUB - ONLY re-render when document changes
   useEffect(() => {
     if (!document || !viewerRef.current) return;
-
-    // Reset setup state
     isSetupCompleteRef.current = false;
-
     const cleanup = () => {
       if (bookRef.current) {
-        try {
-          bookRef.current.destroy();
-        } catch (e) {
-          console.warn('Error destroying book:', e);
-        }
+        try { bookRef.current.destroy(); } catch (e) { console.warn('Error destroying book:', e); }
       }
       bookRef.current = null;
       renditionRef.current = null;
     };
-
     setIsLoading(true);
-
     const viewer = viewerRef.current;
     viewer.innerHTML = '';
-
-    console.log('Loading EPUB:', document.originalName);
-
-    // Try multiple URL formats for better compatibility
     const epubUrl = `/uploads/${document.filename}`;
     const fallbackUrl = `/api/file/${document.filename}`;
-
-    console.log('Attempting to load EPUB from:', epubUrl);
-
-    // Test if the file is accessible first
+    
     fetch(epubUrl, { method: 'HEAD' })
-      .then(response => {
-        if (!response.ok) {
-          console.warn('Primary URL failed, trying fallback:', fallbackUrl);
-          return fetch(fallbackUrl, { method: 'HEAD' });
-        }
-        return response;
-      })
+      .then(response => response.ok ? response : fetch(fallbackUrl, { method: 'HEAD' }))
       .then(response => {
         const urlToUse = response.url.includes('/api/file/') ? fallbackUrl : epubUrl;
-        console.log('Using URL:', urlToUse);
-
         const book = ePub(urlToUse);
         bookRef.current = book;
-
-        const rendition = book.renderTo(viewer, {
-          width: viewer.clientWidth,
-          height: viewer.clientHeight,
-          spread: "auto",
-          flow: "paginated"
-        });
+        const rendition = book.renderTo(viewer, { width: viewer.clientWidth, height: viewer.clientHeight, spread: "auto", flow: "paginated" });
         renditionRef.current = rendition;
-
         return rendition.display();
       })
       .then(() => {
         setIsLoading(false);
         if (renditionRef.current) {
           renditionRef.current.themes.fontSize(`${fontSize}%`);
-
           setupEditingListeners();
-
           renditionRef.current.on('relocated', (location: any) => {
             setCurrentLocation(location);
-
             if (bookRef.current && bookRef.current.locations) {
               const progress = bookRef.current.locations.percentageFromCfi(location.start.cfi);
-              onProgressUpdate({
-                percentage: Math.round(progress * 100),
-                timeRead: 0,
-                timeRemaining: 0,
-                currentPosition: Math.round(progress * 100),
-                totalLength: 100
-              });
+              onProgressUpdate({ percentage: Math.round(progress * 100), timeRead: 0, timeRemaining: 0, currentPosition: Math.round(progress * 100), totalLength: 100 });
             }
           });
-
           if (bookRef.current) {
             bookRef.current.locations.generate(1024).then(() => {
               console.log('Generated', bookRef.current.locations.length(), 'location points');
             });
-
             extractFullText(bookRef.current);
           }
         }
       })
       .catch((error: any) => {
-        console.error('Error loading EPUB:', error);
         setIsLoading(false);
-        toast({
-          title: "Loading failed",
-          description: `Could not load the EPUB file: ${error.message}`,
-          variant: "destructive",
-        });
+        toast({ title: "Loading failed", description: `Could not load the EPUB file: ${error.message}`, variant: "destructive" });
       });
-
     return cleanup;
-  }, [document?.filename]); // ONLY depend on document filename change
+  }, [document?.filename, extractFullText, onProgressUpdate, setupEditingListeners, toast]);
 
-  // Update font size
   useEffect(() => {
     if (renditionRef.current) {
       try {
@@ -574,63 +395,36 @@ export function MainReader({
 
   return (
     <main className="flex-1 flex flex-col bg-background min-w-0">
-      {/* Header */}
       <div className="p-6 border-b border-border flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground truncate max-w-md">
           {document.originalName}
         </h1>
         <div className="flex items-center space-x-2">
-          {/* Editing Tools */}
           <Button
             variant={highlightMode ? "default" : "outline"}
             size="sm"
-            onClick={() => {
-              setHighlightMode(!highlightMode);
-              setNoteMode(false);
-            }}
+            onClick={() => { setHighlightMode(!highlightMode); setNoteMode(false); }}
             className={highlightMode ? "bg-yellow-500 text-white" : ""}
           >
-            <Highlighter className="h-4 w-4 mr-1" />
-            Highlight
+            <Highlighter className="h-4 w-4 mr-1" /> Highlight
           </Button>
-
           <Button
             variant={noteMode ? "default" : "outline"}
             size="sm"
-            onClick={() => {
-              setNoteMode(!noteMode);
-              setHighlightMode(false);
-            }}
+            onClick={() => { setNoteMode(!noteMode); setHighlightMode(false); }}
             className={noteMode ? "bg-blue-500 text-white" : ""}
           >
-            <StickyNote className="h-4 w-4 mr-1" />
-            Note
+            <StickyNote className="h-4 w-4 mr-1" /> Note
           </Button>
-
-          {/* Navigation */}
-          <Button variant="ghost" size="sm" onClick={goPrev}>
-            <ChevronLeft className="h-4 w-4 mr-1" /> Prev
-          </Button>
-          <Button variant="ghost" size="sm" onClick={goNext}>
-            Next <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-
-          {/* Font size */}
+          <Button variant="ghost" size="sm" onClick={goPrev}><ChevronLeft className="h-4 w-4 mr-1" /> Prev</Button>
+          <Button variant="ghost" size="sm" onClick={goNext}>Next <ChevronRight className="h-4 w-4 ml-1" /></Button>
           <div className="flex items-center surface-200 dark:surface-700 rounded-lg p-1">
-            <Button variant="ghost" size="sm" onClick={() => adjustFontSize(-10)} className="h-8 w-8 p-0">
-              <Minus className="h-4 w-4" />
-            </Button>
-            <span className="px-3 text-sm font-medium text-foreground min-w-[3rem] text-center">
-              {fontSize}%
-            </span>
-            <Button variant="ghost" size="sm" onClick={() => adjustFontSize(10)} className="h-8 w-8 p-0">
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => adjustFontSize(-10)} className="h-8 w-8 p-0"><Minus className="h-4 w-4" /></Button>
+            <span className="px-3 text-sm font-medium text-foreground min-w-[3rem] text-center">{fontSize}%</span>
+            <Button variant="ghost" size="sm" onClick={() => adjustFontSize(10)} className="h-8 w-8 p-0"><Plus className="h-4 w-4" /></Button>
           </div>
         </div>
       </div>
-
-      {/* Instructions */}
       <div className="px-6 py-2 bg-muted/20 border-b border-border">
         <p className="text-xs text-muted-foreground text-center">
           {highlightMode ? "🖍️ Highlight mode: Select text to automatically highlight" :
@@ -638,8 +432,6 @@ export function MainReader({
            "💡 Use highlight/note tools above to annotate text"}
         </p>
       </div>
-
-      {/* EPUB Viewer */}
       <div className="flex-1 relative overflow-hidden">
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
@@ -649,21 +441,17 @@ export function MainReader({
             </div>
           </div>
         )}
-
         <div ref={viewerRef} className="w-full h-full [&_iframe]:border-none" />
       </div>
-
-      {/* Note Dialog */}
-      <NoteDialog
-        isOpen={showNoteDialog}
-        onClose={() => {
-          setShowNoteDialog(false);
-          setNoteDialogData(null);
-        }}
-        onSave={handleNoteSave}
-        selectedText={noteDialogData?.selectedText || ''}
-        position={noteDialogData?.position || { x: 0, y: 0 }}
-      />
+      {noteDialogState && (
+        <NoteDialog
+          isOpen={!!noteDialogState}
+          onClose={() => setNoteDialogState(null)}
+          onSave={handleSaveNote}
+          selectedText={noteDialogState.data.selectedText || ''}
+          initialNoteText={noteDialogState.mode === 'edit' ? (noteDialogState.data as Note).noteText : ''}
+        />
+      )}
     </main>
   );
 }

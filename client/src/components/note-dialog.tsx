@@ -1,5 +1,5 @@
 // client/src/components/note-dialog.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -15,36 +15,50 @@ interface NoteDialogProps {
   onClose: () => void;
   onSave: (noteText: string) => void;
   selectedText: string;
-  position: { x: number; y: number };
+  initialNoteText?: string;
 }
 
-export function NoteDialog({ isOpen, onClose, onSave, selectedText, position }: NoteDialogProps) {
+export function NoteDialog({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  selectedText, 
+  initialNoteText = '' 
+}: NoteDialogProps) {
   const [noteText, setNoteText] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setNoteText(initialNoteText);
+    }
+  }, [isOpen, initialNoteText]);
 
   const handleSave = () => {
     if (noteText.trim()) {
       onSave(noteText.trim());
-      setNoteText('');
       onClose();
     }
   };
 
-  const handleCancel = () => {
-    setNoteText('');
-    onClose();
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Note</DialogTitle>
+          <DialogTitle>{initialNoteText ? 'View / Edit Note' : 'Add Note'}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
-          <div className="p-3 bg-muted rounded-lg">
+          <div className="p-3 bg-muted rounded-lg max-h-28 overflow-y-auto">
             <p className="text-sm text-muted-foreground mb-1">Selected text:</p>
-            <p className="text-sm font-medium">"{selectedText.substring(0, 100)}{selectedText.length > 100 ? '...' : ''}"</p>
+            <blockquote className="text-sm font-medium border-l-2 pl-2 border-border">
+              "{selectedText}"
+            </blockquote>
           </div>
           
           <div>
@@ -61,7 +75,7 @@ export function NoteDialog({ isOpen, onClose, onSave, selectedText, position }: 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={!noteText.trim()}>
