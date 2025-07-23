@@ -5,3 +5,28 @@
          style="width: 35%;">
   </a>
 </div>
+# 📚 eReader
+
+**eReader** is a web-based EPUB reader that lets you upload, read, highlight, and annotate `.epub` files with ease. Designed for simplicity and usability, it’s perfect for personal reading or academic study. A smart reading assistant is coming soon to make the experience even better.
+
+🔗 **Live Demo**: [https://ereader.onrender.com](https://ereader.onrender.com)
+
+---
+
+## 🚀 Features
+
+- 📥 **Upload EPUBs**: Upload `.epub` files directly from your device.
+- 📖 **Read in Browser**: No installation needed – just open and read.
+- ✍️ **Highlight Text**: Select and highlight important content.
+- 📝 **Add Notes**: Attach personal notes to highlighted sections.
+- 💡 **Reading Assistant (Coming Soon)**: AI-powered help to summarize, explain, or translate selected content.
+
+---
+
+## 🧑‍💻 Tech Stack
+
+- **Frontend**: React + Tailwind CSS
+- **Backend**: Node.js + Express
+- **EPUB Rendering**: EPUB.js
+- **Deployment**: Render
+
