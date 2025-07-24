@@ -191,6 +191,11 @@
     animation: pulseGlow 2s ease-in-out infinite;
   }
   
+  /* Note popup animations */
+  .note-popup {
+    animation: fadeInScale 0.2s ease-out;
+  }
+  
   @keyframes fadeIn {
     from {
       opacity: 0;
@@ -219,4 +224,115 @@
       box-shadow: 0 0 20px rgba(26, 115, 232, 0.8);
     }
   }
+
+  @keyframes fadeInScale {
+    from {
+      opacity: 0;
+      transform: scale(0.9) translateY(-5px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
+}
+
+/* Note popup styling */
+.note-popup {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Dark mode support for note popups */
+.dark .note-popup {
+  background: #2d3748 !important;
+  color: #e2e8f0 !important;
+  border-color: #4a5568 !important;
+}
+
+.dark .note-popup button {
+  background: #4a5568 !important;
+  color: #e2e8f0 !important;
+  border-color: #2d3748 !important;
+}
+
+.dark .note-popup button:hover {
+  background: #2d3748 !important;
+}
+
+/* Improve note popup appearance */
+.note-popup button:hover {
+  background: #e5e7eb;
+}
+
+.note-popup {
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* client/src/index.css - Add these styles at the end */
+
+/* EPUB content fixes */
+.epub-container {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  line-height: 1.6 !important;
+}
+
+/* Fix overlapping text issues */
+[data-epub-container] * {
+  line-height: 1.6 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+[data-epub-container] p {
+  margin-bottom: 1em !important;
+  text-align: justify !important;
+  hyphens: auto !important;
+}
+
+[data-epub-container] div {
+  line-height: inherit !important;
+}
+
+/* Note styling improvements */
+.note-highlight {
+  background-color: #e3f2fd !important;
+  padding: 2px 4px !important;
+  border-radius: 3px !important;
+  cursor: pointer !important;
+  border: 1px solid #2196f3 !important;
+  position: relative !important;
+  display: inline !important;
+}
+
+.note-icon {
+  position: absolute !important;
+  right: -2px !important;
+  top: -8px !important;
+  font-size: 10px !important;
+  background-color: #2196f3 !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 1000 !important;
+  cursor: pointer !important;
+}
+
+.note-icon:hover {
+  background-color: #1976d2 !important;
+  transform: scale(1.1) !important;
+}
+
+/* Text selection improvements */
+::selection {
+  background-color: rgba(33, 150, 243, 0.3) !important;
+}
+
+::-moz-selection {
+  background-color: rgba(33, 150, 243, 0.3) !important;
 }
